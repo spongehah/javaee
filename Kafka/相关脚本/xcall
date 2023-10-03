@@ -1,0 +1,8 @@
+#!/bin/bash
+
+for host in redis100 redis101 redis102
+do
+        echo =============== $host ===============
+        ssh $host jps 
+done
+

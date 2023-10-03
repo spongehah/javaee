@@ -1,0 +1,61 @@
+server:
+  port: 2001
+
+spring:
+  application:
+    name: seata-order-service
+  cloud:
+    nacos:
+      server-addr: localhost:8848
+      discovery:
+        group: SEATA_GROUP
+        register-enabled: true
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/seata_order
+    username: root
+    password: zw2635879218@
+    
+seata:
+  application-id: ${spring.application.name}
+  tx-service-group: default_tx_group
+  service:
+    vgroup-mapping:
+      default_tx_group: default
+  config:
+    # support: nacos, consul, apollo, zk, etcd3
+    type: nacos
+    nacos:
+      server-addr: 127.0.0.1:8848
+#      namespace:
+      group: SEATA_GROUP
+      username: nacos
+      password: nacos
+      data-id: "seataServer.properties"
+  registry:
+    # support: nacos, eureka, redis, zk, consul, etcd3, sofa
+    type: nacos
+    nacos:
+      application: seata-server
+      server-addr: 127.0.0.1:8848
+      group: SEATA_GROUP
+#      namespace:
+      cluster: default
+      username: nacos
+      password: nacos
+
+#feign:
+#  client:
+#    config:
+#      default:
+#        connect-timeout: 5000
+#        read-timeout: 5000
+
+logging:
+  level:
+    io:
+      seata: info
+
+mybatis:
+  mapperLocations: classpath:mapper/*.xml

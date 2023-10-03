@@ -1,0 +1,32 @@
+在pom.xml中添加依赖
+
+	<!--分页依赖-->
+	<dependency>
+		 <groupId>com.github.pagehelper</groupId>
+		 <artifactId>pagehelper</artifactId>
+		 <version>5.2.0</version>
+	</dependency>
+
+
+在核心配置文件中，<environments>之前，添加
+
+    <!--
+        分页插件：
+            index：当前页的起始索引
+            pageSize：每页显示的条数
+            pageNum：当前页的页码
+            index=(pageNum-1)*pageSize
+            System.out.println(page);
+            使用MyBatis的分页插件实现分页功能：
+            1.需要在查询功能之前开启分页
+            pageHelper.startPage(int pageNum,int pageSize);
+            2.在查询功能之后获取相关分页信息
+            pageInfo<Emp> page = new pageInfo<>(emps,int navigatePages)
+            emps:表示分页数据
+            navigatePages:表示当前导航栏显示的页码数量/当前导航分页的数量
+    -->
+
+    <plugins>
+        <!--设置分页插件-->
+        <plugin interceptor="com.github.pagehelper.PageInterceptor"></plugin>
+    </plugins>

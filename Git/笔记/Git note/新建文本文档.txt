@@ -1,0 +1,84 @@
+yy/ctrl+insert/鼠标左键双击 : 复制
+p/shift+insert/鼠标中键单击 : 粘贴
+ESC/ctrl+c : 退出编辑
+i : 进入编辑
+shift+;+wq : 保存退出
+ctrl+l : 清屏
+
+git config --global user.name xxx : 设置用户名称
+git config --global user.email xxx : 设置用户邮箱
+
+ll : 查看仓库数量
+cd 仓库名/ : 进入仓库
+git status : 查看状态
+vim xxx.xxx : 添加/修改文件
+git add xxx.xxx : 添加文件到暂存区
+git rm --cached xxx.xxx : 删除暂存区的文件
+git commit -m "" xxx.xxx : 提交文件到本地库(双引号中写版本说明，如first commit)
+git reflog ：查看精简的日志命令
+git log : 查看详细的日志命令
+cat xxx.xxx : 查看某文件
+git reset --hard 版本号 : 版本穿梭
+
+git branch 分支名 : 创建分支
+git branch -v : 查看分支
+git checkout 分支名 : 切换分支
+git merge 分支名 : 把指定的分支合并到当前分支来
+git commit -m "" : 合并分支后有冲突，提交不成功，可用此代码
+
+git remote -v : 查看当前本地库的远程库别名
+git remote add 别名 http网址 : 创建远程库别名
+git push 远程库别名 分支名(eg:master) : 将指定分支添加到远程库
+git pull 远程库别名 分支名 : 将远程库的分支拉去到本地库
+git clone http网址/别名 : 克隆远程库 1.拉取代码  2.初始化本地仓库  3.创建别名origin
+
+团队外合作：在github上fork叉取到自己的远程库
+
+添加SSH公钥：
+	在C:\Users\zhaoyingjie中找到.ssh文件夹，运行git，cat id_rsa.pub,复制代码到github的设置SSH and GPG keys
+	若无.ssh文件夹，则在C:\Users\zhaoyingjie下运行git 输入代码  ssh-keygen -t rsa -C 2635879218@qq.com ，连敲四次回车
+
+
+忽略规则文件:
+1）创建忽略规则文件 xxxx.ignore（前缀名随便起，建议是 git.ignore）
+这个文件的存放位置原则上在哪里都可以，为了便于让~/.gitconfig 文件引用，建议也放在用
+户家目录下
+git.ignore 文件模版内容如下：
+# Compiled class file
+*.class
+# Log file
+*.log
+# BlueJ files
+*.ctxt
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+# Package Files #
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+# virtual machine crash logs, see 
+http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+.classpath
+.project
+.settings
+target
+.idea
+*.iml
+
+2）在.gitconfig 文件中引用忽略配置文件（此文件在 Windows 的家目录中）
+[user]
+name = haha
+email = 2635879218@qq.com
+[core]
+excludesfile = C:/Users/zhaoyingjie/git.ignore
+注意：这里要使用“正斜线（/）”，不要使用“反斜线（\）”
+
+
+配置idea：
+	在设置里配置Git，登录GitHub账号
+	账号口令token:

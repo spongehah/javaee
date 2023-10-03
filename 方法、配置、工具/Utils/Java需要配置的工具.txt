@@ -1,0 +1,16 @@
+JDK
+IDEA
+MySQL
+MySQL connector jar°ü
+SQLyog/navicat
+Tomcat
+Maven
+git
+jvisualvm
+mat
+jprofiler
+gcviewer
+Linux
+xshell
+xftp
+redis.tar.gz

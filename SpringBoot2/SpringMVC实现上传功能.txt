@@ -1,0 +1,99 @@
+@RequestMapping("/test/up")
+public String testUp(MultipartFile photo, HttpSession session) throws IOException {
+    //获取上传的文件的文件名
+    String fileName = photo.getOriginalFilename();
+    //获取上传的文件的后缀名
+    String hzName = fileName.substring(fileName.lastIndexOf("."));
+    //获取uuid
+    String uuid = UUID.randomUUID().toString();
+    //拼接一个新的文件名
+    fileName = uuid + hzName;
+    //获取ServletContext对象
+    ServletContext servletContext = session.getServletContext();
+    //获取当前工程下photo目录的真实路径
+    String photoPath = servletContext.getRealPath("photo");
+    //创建photoPath所对应的File对象
+    File file = new File(photoPath);
+    //判断file所对应目录是否存在
+    if(!file.exists()){
+        file.mkdir();
+    }
+    String finalPath = photoPath + File.separator + fileName;
+    //上传文件
+    photo.transferTo(new File(finalPath));
+    return "success";
+}
+
+
+
+@PostMapping("/upload")
+public String upload(@RequestParam("email") String email,
+                     @RequestParam("userName") String userName,
+                     @RequestPart("headerImg") MultipartFile headerImg,
+                     @RequestPart("photos") MultipartFile[] photos) throws IOException {
+
+    log.info("上传的信息：email={}，username={}，headerImg={}，photos={}",
+            email,userName,headerImg.getSize(),photos.length);
+
+    if(!headerImg.isEmpty()){
+        //保存到文件服务器，OSS服务器
+        String originalFilename = headerImg.getOriginalFilename();
+        headerImg.transferTo(new File("E:\\cache\\"+originalFilename));
+    }
+
+    if(photos.length > 0){
+        for (MultipartFile photo : photos) {
+            if(!photo.isEmpty()){
+                String originalFilename = photo.getOriginalFilename();
+                photo.transferTo(new File("E:\\cache\\"+originalFilename));
+            }
+        }
+    }
+
+
+    return "main";
+}
+
+
+
+
+@RequestMapping("/upload")
+public String upload(@RequestParam(value = "email",required = false) String email,
+                     @RequestParam(value = "userName",required = false) String userName,
+                     @RequestPart("headerImg") MultipartFile headerImg,
+                     @RequestPart(value = "photos",required = false) MultipartFile[] photos,
+                     HttpSession session) throws IOException {
+    
+    log.info("上传的信息：email={}，username={}，headerImg={}，photos={}",
+            email,userName,headerImg.getSize(),photos.length);
+    
+    if(!headerImg.isEmpty()){
+        //获取上传的文件的文件名
+        String fileName = headerImg.getOriginalFilename();
+        //获取上传的文件的后缀名
+        String hzName = fileName.substring(fileName.lastIndexOf("."));
+        //获取uuid
+        String uuid = UUID.randomUUID().toString();
+        //拼接一个新的文件名
+        fileName = uuid + hzName;
+        /*//获取ServletContext对象
+        ServletContext servletContext = session.getServletContext();
+        //获取当前工程下photo目录的真实路径
+        String photoPath = servletContext.getRealPath("photo");*/
+        
+        File file = new File("src/main/resources/static/photo");
+//        log.info(photoPath);
+        //创建photoPath所对应的File对象
+//        File file = new File(photoPath);
+        //判断file所对应目录是否存在
+        if(!file.exists()){
+            file.mkdirs();
+        }
+        String finalPath = file.getAbsolutePath() + File.separator + fileName;
+         
+        log.info(finalPath);
+        //上传文件
+        headerImg.transferTo(new File(finalPath));
+        
+    }
+}

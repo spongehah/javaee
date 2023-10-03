@@ -1,0 +1,232 @@
+======================================Spring===================================
+===================IOC===================
+
+setter注入、构造器注入
+自动装配：ByNmae、ByType		<-->		@Autowired	@Qualifier
+简单数据类型注入：用 @Value取值，可用 @Value(${})获取properties文件中的值
+
+<bean>  <-->  @Bean
+
+@ComponentScan <--> xml:<context:componentscan>
+
+@PropertySource(不可以用通配符*) <--> xml:<context:properties>(可以用通配符*)
+
+@RunWith + @ContextConfiguration <-->  @SpringBootTest
+
+===================AOP======================
+ 
+AOP: @EnableAspectJAutoProxy + @Aspect @Component
+		+ @PointCut("execution(访问修饰符(可省略) 返回值 包名.类/接口名.方法名(参数))") + @Before / @After("pt()")
+	@PointCut声明的方法需为private void
+
+可以使用通配符描述切入点，快速描述
+		*:单个独立的任意符号，可以独立出现，也可以作为前缀或者后缀的匹配符出现
+		execution (public com.itheima.*.UserService.find*(*)
+		匹配com..itheima包下的任意包中的UserService类或接口中所有find开头的带有一个参数的方法
+
+		…:多个连续的任意符号，可以独立出现，常用于简化包名与参数的书写
+		execution (public User com..UserService.findById (..)
+		匹配com包下的任意包中的JserService类或接口中所有名称为findByld的方法
+
+		+:专用于匹配子类类型
+		execution(**..*Service+.*(..))
+
+
+●名称： @Around(重点，常用)		**around通知要将连接点方法的原返回值给返回回去
+●类型：方法注解
+●位置：通知方法定义上方
+·作用：设置当前通知方法与切入点之间的绑定关系，当前通知方法在原始切入点方法前后运行
+●范例：																								@Before 和 @After的是JoinPoint jp
+		@Around ("pt()")
+		public Object around(ProceedingJoinPoint = pjp)throws Throwable{
+			//获取连接点方法的形参值
+			Object[] args = pjp.getArgs();
+
+			//获取执行签名信息
+			Signature signature = pjp.getsignature();
+			//通过签名获取执行类型（接口名）
+			String className = signature.getDeclaringTypeName();
+			//通过签名获取执行操作名称（方法名）
+			String methodName = signature.getName();
+
+			System.out.println("around before advice ...")
+			object ret = pjp.proceed();
+			System.out.println("around after advice ...")
+			return ret;
+		}
+
+		@After/ @Before		若需要返回值或者抛出异常	@AfterReturning(value = "pt()",returning = "ret")/ @AfterThrowing(throwing="")
+		public void afterReturning(JoinPoint jp,Object ret){
+			//获取连接点方法的形参值
+			Object[] args = jp.getArgs();
+			System.out.println("afterReturning advice ..."+ret);
+		}
+
+==================spring事务====================
+@Transactional + @Bean public PlatformTransactionManager transactionManager() + @EnableTransactionManagement
+
+事务协调员若要加入事务管理员的事务，不想因为事务管理员的事务失败而使自己的事务也失败的话，就设置事务的传播行为/属性：
+																								@Transactional(propagation=Propagation.REQUIRES_NEW)
+
+传播属性有一下7种：
+REQUIRED(默认)
+REQUIRES NEW
+SUPPORTS
+NOT SUPPORTED
+MANDATORY
+NEVER
+NESTED
+
+==================代理模式(AOP使用的也是代理模式)================
+代理模式是什么？    --->  案例看ProxyTest文件
+		作用就是通过提供一个代理类，让我们在调用目标
+		方法的时候，不再是直接对目标方法进行调用，而是通过代理类间接调用。让不属于目标方法核心逻辑
+		的代码从目标方法中剥离出来——解耦。调用目标方法时先调用代理对象的方法，减少对目标方法的调
+		用和打扰，同时让附加功能能够集中在一起也有利于统一维护
+
+================================================================================================
+
+========================================MyBatis====================================================
+#{}	占位符(?)拼接
+${}	字符串拼接
+
+useGeneratedKeys:表示当前添加功能使用自增的主键
+keyProperty:将添加的数据的自增主键为实体类类型的参数的属性赋值
+
+resultMap:设置自定义的映射关系
+		id:唯一标识
+		type:处理映射关系的实体类的类型
+		常用的标签：
+		id:处理主键和实体类中属性的映射关系
+		resu儿t：处理普通军段和实体类中属性的映刷关系
+		column:设置映射关系中的字段名，必须是sqL查询出的某个字段
+		property:设置映射关系中的属性的属性名，必须是处理的实体类类型中的属性名
+
+
+多对一映射关系的处理：
+		1.级联
+			<resultMap id="empAndDeptResultMap"type="Emp">
+				<id column="emp_id"property="empId"></id>
+				<result column="emp_name"property="empName"></result>
+				<result column="age"property="age"></result>
+				<result column="gender"property="gender"></result>
+				<result column="dept_id"property="dept.deptId"></result>
+				<result column="dept_name"property="dept.deptName"></result>
+			</resultMap>
+
+		2.association
+			<resultMap id="empAndDeptResultMap"type="Emp">
+				<id column="emp_id"property="empId"></id>
+				<result column="emp_name"property="empName"></result>
+				<result column="age"property="age"></result>
+				<result column="gender"property="gender"></result>
+				<association property="dept"javaType="Dept">
+					<id column="dept_id"property="deptId"></id>
+					<result column="dept_name"property="deptName"></result>
+				</association>
+			</resultMap>
+
+		3.分步查询(推荐熟练使用，--> 因为当很多张表进行查询的时候，分步查询会有很好的思路)
+			<resultMap id="empAndDeptBystepResultMap"type="Emp">
+				<id column="emp_id"property="empId"></id>
+				<result column="emp_name"property="empName"></result>
+				<result column="age"property="age"></result>
+				<result column="gender"property="gender"></result>
+				<!-
+						property:设置需要处理映射关系的属性的属性名
+						select：设置分步查询的sql的唯一标识
+						column:
+						将查询出的某个字段作为分步查询下一步的sqL的条件
+				-->
+				<association property="dept"
+								 select="com.atguigu.mybatis.mapper.DeptMapper.getEmpAndDeptBystepTwo"
+								 column="dept_id"></association>
+			</resultMap>
+
+			补充知识点：延迟加载：
+					<！--开启延迟加载-->
+					<setting name="lazyLoadingEnabled"value="true"/>
+					<!--按需加载  false才是按需加载的意思，若为true，则延迟加载无效，默认为false-->
+					<setting name="aggressiveLazyLoading"value="false"/>
+
+					<!-
+						fetchType：在开启了延迟加载的环境中，通过该属性设置当前的分步查询是否使用延迟加载
+						fetchType="eager(立即加载)|Lazy(延迟加载)“
+					-->
+						<association property="dept" fetchType="eager"
+						select="com.atguigu.mybatis.mapper.DeptMapper.getEmpAndDeptBystepTwo"
+						column="dept_id"></association>
+
+一对多映射关系的处理：
+		1.collection
+			<resultMap id="deptAndEmpResultMap"type="Dept">
+				<id column="dept_id"property="deptId"></id>
+				<result column="dept_name"property="deptName"></result>
+				<!-
+					ofType：设置集合类型的属性中存储的数据的类到
+				-->
+				<collection property="emps"ofType="Emp">
+					<id column="emp_id"property="empId"></id>
+					<result column="emp_name"property="empName"></result>
+					<result column="age"property="age"></result>
+					<result column="gender"property="gender"></result>
+				</collection>
+			</resultMap>
+
+		2.分步查询
+			<resultMap id="deptAndEmpResultMapBystep"type="Dept">
+				<id column="dept_id"property="deptId"></id>
+				<result column="dept_name"property="deptName"></result>
+				<collection property="emps"
+								select="com.atguigu.mybatis.mapper.EmpMapper.getDeptAndEmpBystepTwo"
+								column="dept id"></collection>
+			</resultMap>
+
+
+动态SQL：
+        1、if，通过test属性中的表达式判断标签中的内容是否有效（是否会拼接到sql中）
+        2、where
+        a.若where标签中有条件成立，会自动生成where关键字
+        b.会自动将where标签中内容前多余的and去掉，但是其中内容后多余的and无法去掉
+        c.若where标签中没有任何一个条件成立，则where没有任何功能
+        3、trim
+        prefix、suffix：在标签中内容前面或后面添加指定内容
+        prefixOverrides、suffixOverrides：在标签中内容前面或后面去掉指定内容
+        4、choose、when、otherwise
+        相当于java中的if...else if...else
+        when至少设置一个，otherwise最多设置一个
+        5、foreach
+        collection：设置要循环的数组或集合
+        item：用一个字符串表示数组或集合中的每一个数据
+        separator：设置每次循环的数据之间的分隔符
+        open：循环的所有内容以什么开始
+        close：循环的所有内容以什么结束
+        6、sql片段
+        可以记录一段sql，在需要用的地方使用include标签进行引用
+        <sql id="empColumns">
+            emp_id,emp_name,age,gender,dept_id
+        </sql>
+        <include refid="empColumns"></include>
+
+
+
+MyBatis的一级缓存
+		一级缓存是SqlSession级别的，通过同一个SqlSession查询的数据会被缓存，下次查询相同的数据，就
+		会从缓存中直接获取，不会从数据库重新访问
+		使一级缓存失效的四种情况：
+		1) 不同的SqlSession对应不同的一级缓存
+		2) 同一个SqlSession但是查询条件不同
+		3) 同一个SqlSession两次查询期间执行了任何一次增删改操作
+		4) 同一个SqlSession两次查询期间手动清空了缓存
+
+MyBatis的二级缓存
+		二级缓存是SqlSessionFactory级别，通过同一个SqlSessionFactory创建的SqlSession查询的结果会被
+		缓存；此后若再次执行相同的查询语句，结果就会从缓存中获取
+		二级缓存开启的条件：
+		a>在核心配置文件中，设置全局配置属性cacheEnabled="true"，默认为true，不需要设置
+		b>在映射文件中设置标签<cache/>
+		c>二级缓存必须在SqlSession关闭或提交之后有效
+		d>查询的数据所转换的实体类类型必须实现序列化的接口
+		使二级缓存失效的情况：
+		两次查询之间执行了任意的增删改，会使一级和二级缓存同时失效
+

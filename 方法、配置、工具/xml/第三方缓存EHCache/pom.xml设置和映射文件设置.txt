@@ -1,0 +1,31 @@
+	/**
+     * 一级缓存：SqlSession级别的
+     * 二级缓存：SqlSessionFactory级别的
+     *      二级缓存的四个条件：
+     *              1.在全局设置中设置CacheEnabled="true"  默认已经开启
+     *              2.在映射文件中设置标签<cache />
+     *              3.二级缓存必须在SqlSession关闭或提交后有效
+     *              4.查询的数据所转换的实体类类型必须实现序列化接口
+     *      使二级缓存失效：
+     *              两次查询之间执行了任意的增删改
+     *
+     */
+
+对应mapper映射文件：
+	<cache type="org.mybatis.caches.ehcache.EhcacheCache"/>
+
+pom.xml:
+		  <!-- Mybatis EHCache整合包 -->
+        <dependency>
+            <groupId>org.mybatis.caches</groupId>
+            <artifactId>mybatis-ehcache</artifactId>
+            <version>1.2.1</version>
+        </dependency>
+
+        <!-- slf4j日志门面的一个具体实现 -->
+        <!--会代替log4j日志-->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.2.3</version>
+        </dependency>

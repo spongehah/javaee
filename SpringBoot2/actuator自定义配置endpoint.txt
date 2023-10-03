@@ -1,0 +1,82 @@
+定制 Health 信息（详情见boot-05-web-admin）
+		@Component
+		public class MyComHealthIndicator extends AbstractHealthIndicator {
+
+			 /**
+			  * 真实的检查方法
+			  * @param builder
+			  * @throws Exception
+			  */
+			 @Override
+			 protected void doHealthCheck(Health.Builder builder) throws Exception {
+				  //mongodb。  获取连接进行测试
+				  Map<String,Object> map = new HashMap<>();
+				  // 检查完成
+				  if(1 == 2){
+		//            builder.up(); //健康
+						builder.status(Status.UP);
+						map.put("count",1);
+						map.put("ms",100);
+				  }else {
+		//            builder.down();
+						builder.status(Status.OUT_OF_SERVICE);
+						map.put("err","连接超时");
+						map.put("ms",3000);
+				  }
+
+
+				  builder.withDetail("code",100)
+							 .withDetails(map);
+			 }
+		}
+
+
+
+定制info信息：自定义该Web的信息
+		management: 
+		  info:     #springboot2.6以后，需手动开启info
+			 env:
+				enabled: true
+		info :      #自定义该Web的信息
+		  appName: boot-admin
+		  version: 1.0.0
+		  mavenProjectName: @project.artifactId@  #使用@@可以获取maven的pom文件值
+		  mavenProjectVersion: @project.version@
+
+		  http://localhost:8080/actuator/info 会输出以上方式返回的所有info信息
+
+
+
+增加定制Metrics：
+			//下例可显示hello方法的调用次数
+			class xxxServiceImpl/Controller{
+				 ......
+				 Counter counter;
+				 public xxxServiceImpl(MeterRegistry meterRegistry){
+						counter = meterRegistry.counter("myservice.method.running.counter");
+				 }
+
+				 public void hello() {
+					  counter.increment();
+				 }
+				 ......
+			}
+
+
+定制Endpoint:
+				@Component
+				@Endpoint(id = "myservice")
+				public class MyServiceEndPoint {
+
+
+					 @ReadOperation
+					 public Map getDockerInfo(){
+						  //端点的读操作  http://localhost:8080/actuator/myservice
+						  return Collections.singletonMap("dockerInfo","docker started.....");
+					 }
+
+					 @WriteOperation
+					 public void stopDocker(){
+						  System.out.println("docker stopped.....");
+					 }
+				}

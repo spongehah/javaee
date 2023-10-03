@@ -1,0 +1,25 @@
+server:
+  port: 3377
+
+spring:
+  application:
+    name: nacos-config-client
+  cloud:
+    nacos:
+      server-addr: 192.168.111.100:1111
+      discovery:
+        server-addr: 192.168.111.100:1111
+        enabled: true
+#        username: nacos
+#        password: nacos
+#        service: ${spring.application.name}
+      config:
+        server-addr: 192.168.111.100:1111
+        file-extension: yaml
+#        group: DEFAULT_GROUP
+
+
+
+# ${spring.application.name}-${spring.profile.active}.${spring.cloud.nacos.config.file-extension}
+# nacos-config-client-dev.yaml
+ 

@@ -1,0 +1,377 @@
+VIM有三种模式：
+
+	1.一般模式：进行基本的复制粘贴和删除
+		w：	一个词，移动到下一个词开
+		b：	移动到上一个词的词头
+		e：	移动到当前词结尾
+		gg/H：	移动到页头
+		G/L：	移动到页尾
+		nG：	跳转到第n行         可通过命令模式：set nu/set nonu开启或关闭行号
+		$：	行尾
+		^：	行首
+		u:	撤销操作
+		ctrl+r	恢复撤销
+
+			复制：yy(复制换行符)     复制n行：nyy     
+		        从光标复制到行结尾：y$     yy$(复制换行符)     复制到行开头：y^     yy^(复制换行符)
+			复制一个词：yw
+			粘贴：p	     粘贴n次：np
+			删除行：dd   删除n行：ndd	删除当前词：dw        d$        d^
+			单个字符的剪切：x
+			每次剪切光标前一个字符：大写的X
+			替换光标位置字符：r
+			向后替换：大写R	
+
+	2.命令模式：按下:
+			eg：	保存	：w			按下ESC退出到一般模式
+			    退出编辑    ：q
+			    强制退出	：q!
+			    保存退出	：wq
+			    可通过命令模式：set nu/set nonu开启或关闭行号
+		    按下/
+			eg：查找文件内某个单词:		/xxx
+			    替换光标当前行的第一个匹配到的单词：	s/old/new
+			    替换光标当前行的所有匹配到的单词：		s/old/new/g
+			    替换光标当前行的第一个匹配到的单词：	%s/old/new
+			    替换光标当前行的第一个匹配到的单词：	%s/old/new/g
+			    n：移动到下一个匹配到的单词
+			    N：移动到上一个匹配到的单词
+			
+	3.编辑模式：i：光标前  a：光标后   o：向下换行
+		    I：行首    A：行尾     O：向上换行
+			
+				
+Linux终端基础指令：
+	
+	进入路径：cd xx/
+	列出文件：ls
+	列出隐藏文件： ls -a
+	列出软链接的原目录：ls -P
+	分行列出：ls -l 路径名
+	分行列出并筛选：ls -l xxx | grep xxx
+	上一级目录：..
+	当前目录：.
+	查看文件总数：ll
+	换页：ctrl + l  /  clear
+	清空：reset
+	获取指令的帮助文档：man 指令
+	获取指令帮助简化版：help 指令(只适用内嵌指令)
+	查看指令类型：type 指令
+	一般指令的帮助简化版：指令 --help
+	代码补全：输入一些字母后按下tab：eg：vim stu(此时按下tab键) stu会自动补全成为study.txt
+
+	查看是否可通信：ping ip         
+	停止ping：ctrl+c
+	查看本机网络配置：ifconfig
+	修改当前主机网络配置为静态配置网络ip地址：在～目录下：vim /etc/sysconfig/network-scripts/ifcfg-ens33
+	查看当前主机名：hostname/hostnamectl
+	立即更改当前主机名：hostnamectl set-hostname newName	
+	查看服务：ls /usr/bin/systemd/system
+	操作服务：systemctl start/stop/restart/status/enable(启用开机自启动)/disable(禁用开机自启动) 服务名
+	
+	可在终端敲setup，打开服务设置，选择服务的开机自启动选项
+	目前已做服务操作，关闭了network，而选择打开了centos建议的NetworkManager
+	
+	更换运行级别：init 3/5
+		      ctrl +  alt + F1:切换到运行级别5
+		      ctrl +  alt + F2-F6:切换到运行级别3
+	列出所有
+	
+	
+	windows使用远程登陆访问该主机：使用命令ssh root@redis100/ip      或者使用工具Xshell
+	windows使用远程传输文件：      使用命令scp			 或者使用工具Xftp
+
+	关机操作：shutdown		一分钟后关机
+		  shutdown n		n分钟后关机
+		  shutdown now		马上关机
+		  shutdown -h now	马上关机
+		  shutdown min:sec
+		  shutdown -c		取消关机
+		  sync			将数据由内存同步到硬盘中(shutdown操作也会默认执行该命令)
+		  shutdown -r now	重启
+		  reboot		重启
+		  halt			停机
+
+
+
+文件目录类：（勤用man和tab）
+	目录操作命令：
+		pwd 		打印出当前目录所在的绝对路径
+		cd /目录	切换目录(绝对路径，以/开头，表示从根目录开始)
+		cd 目录		进入目录
+		cd ../目录	相对路径
+		cd -		返回上一条命令所在目录
+		cd .. 		返回上一级目录
+		cd(后面啥也没有)进入当前登录用户所在的主目录：root用户为root（~），其他用户为/home/zyj
+		
+		s		打印出当前目录的文件
+		ls -a		打印所有文件（包括隐藏文件，用.开头的文件）
+		ls -l == ll	分行打印详细信息
+		ls -lh		显示当前目录存储总用量
+		
+		mkdir 目录	在当前目录下创建目录(空格隔开创建多个目录)makedirect
+		mkdir /目录	在根目录下创建目录
+		mkdir -p 目录	在当前目录嵌套创建目录
+		rmdir 目录	删除当前目录下的目录(removedirect)
+		rmdir -p 目录 	在当前目录嵌套删除目录
+
+	文件操作命令：
+		touch 文件	创建文件(默认为txt文件)
+		
+		cp 文件 目录	将指定文件复制到指定目录（覆盖会有提示）copy
+		\cp 文件 目录	覆盖不会提示
+		cp -r 文件 目录	递归的复制整个文件夹（包括里面的子文件和子文件夹，一般使用的是加了-r参数的cp）
+		 
+		rm 文件		删除文件(有提示确认)remove
+		rm -f 文件	没有提示确认
+		rm -r 目录	递归删除当前目录下的所有目录文件
+		rm -rf 目录	递归强制删除目录下所有文件
+		rm -f ./*	删除当前目录下的所有文件
+		
+		mv 文件 目录		将指定文件移动到指定目录(move)
+	    	mv 文件 目录/文件名	移动文件后做重命名
+		
+		cat 文件	查看文件(catch)		无快捷键，只是打印出来
+		cat -n 文件	查看文件(显示行号)
+		more 文件	分页查看文件		有部分快捷键
+		less 文件	分页查看文件		有很多快捷键，快捷键和vim一般模式和命令模式差不多(功能最强大)
+							eg：/xxx			查找（按n向下检索，按N向上检索）
+							    f/空格/pagedown		向下翻页
+							    b/pageup			向上翻页
+							    enter			往下翻页一行
+		
+	其它命令：
+		echo xxx/“xxx”	输出字符串到控制台
+		echo -e xxx	输出到控制台(可以使用转义字符\)
+		字符串 > 文件	用字符串的值覆盖文件
+		字符串 >> 文件	把字符串的值追加到文件
+		
+		head 文件	查看文件的前十行
+		head -n x 文件	查看文件的前x行
+		tail 文件	查看文件的后十行
+		tail -n x 文件	查看文件的后十行
+		tail -f 文件	实时追踪该文档的所有更新(若文件用vim做了更改重新保存，那么监控将追踪不到，因为文件索引变了，文件位置变了)
+							ctrl + c	结束跟踪
+							ctrl + s	暂停跟踪
+							ctrl + q	继续跟踪
+	
+
+		ln -s 文件或目录 软链接目录/软链接名(常用)	给原文件或目录创建一个软链接(相当于Windows的快捷方式)不同的文件，多个inode，原文件失效软链接失效
+		ln 文件 硬链接目录/硬链接名			给原文件常见一个硬链接(不能创建目录)同一个inode，多个名字，相互独立，原文件失效硬链接也能访问
+								注意：删除软链接时，rm -rf xxx时不能加/,否则删除的将会是原目录下的东西
+		
+		history		查看过去使用过的命令
+		history n 	查看过去使用过的最近n条命令
+		history -c	清除记录
+		! 命令行号	执行这条历史命令
+		
+
+
+
+时间日期类命令：
+		date				获取当前时间
+		date +%Y			获取当前年份
+		date +%y			获取当前年份简写2022-> 22
+		date +%s			获取时间戳(单位：秒)
+		date +%m/%d			eg: date +%Y-%m-%d-%H:%M:%S     /     date "+%Y-%m-%d %H:%M:%S"
+		date -d "1 days ago"		获取一天后的时间
+		date -d "-1 hours ago" 		获取一个小时前的时间
+		date -s "2027-06-19 20:52:06"	将系统时间设置为这么多
+		ntpdate				重新联网同步时间
+		cal 				查看当月日历
+		cal -y				查看当年日历
+
+
+
+用户权限类：
+	用户(组)权限类：（add:添加、del:删除、mod:修改）
+		useradd					添加用户
+		useradd -d /home/主文件夹名 用户名	为新用户的主文件夹更改名字
+		passwd 用户名				给该用户更改密码
+		id 用户名				查看有无该用户打印用户信息
+		cat /etc/passwd				查看所有用户(里面有很多系统用户，用于专门执行相应的系统指令)
+		su 用户名				切换用户(switch user)
+		exit					切换用户后使用，可回退到上一个登录的用户
+		who am i/whoami				查看当前是哪个用户
+		
+		userdel 				删除用户(只删除用户，不删除对应的主文件夹)
+		userdel -r 用户名			删除用户(包括对应的主文件夹)
+		
+		vim /etc/sudoers			更改可以拥有sudo权限的用户的配置文件
+		sudo 命令				让当前非root用户暂时获得root权限
+		
+		groupadd				添加组
+		usermod -g 组名 用户名			修改用户所属组
+		groupmod -n 新组名 旧组名		修改组的名字
+		groupdel 组名				删除组
+		
+		useradd -g 组名 用户名			添加新用户到组
+
+	文件权限类：
+		（UGO:0-9位编号：
+		0:文件类型、
+		123：U：User代表属主，该文件的创建者拥有的权限、
+		456：G：Group代表属组，所有者的同组用户拥有的权限、
+		789：O：other其他用户的权限）
+		rwx：r	可读
+		     w	可写
+		     x	可操作
+		
+		chmod [{ugoa}{+-=}{rwx}] 文件名		更改文件的权限
+		chmod 777				更改文件权限（根据UGO对应的二进制数开放权限）
+							eg：777  第一个7代表二进制数111，代表U位置上rwx权限均有，1代表有权限，0代表无权限，再转换成二进制数
+		chmod -R 777				递归更改该目录和目录下所有目录及文件的权限
+		
+		chown 用户 文件				更改文件的属主
+		chown -R				递归更改
+		chgrp [-R]  组 文件			更改文件的属组
+
+
+
+		
+		
+搜索查找类命令：
+		find 查找目录(未指定默认为当前目录) -name 检索词	在指定目录下查找名字有检索词的文件
+		find 查找目录 -user 用户名				在指定目录下查找属主是该用户的文件
+		find 查找目录 -size +10M/-10M				在指定目录下查找大于/小于10M的文件
+		
+		locate 目录/文件		查找包含检索词的目录或文件(存放在数据库中，检索更迅速)
+		updatedb	 		更新locate数据库（默认一天才更新一次，故可能查找不准确，要更新）
+		which 命令			查找指定命令在哪个目录下
+		
+		grep (-n) 查找内容 源文件	查找指定文件中拥有的查找内容（-n：显示匹配行及行号）
+		|（管道符）			将前一个命令的处理结果交给后面的命令处理
+						eg：ls | grep -n test
+		
+		wc				wordcount的简写，用于统计某文件某指令结果的行数、单词数、字节大小
+						eg：wc study.txt          grep -n test study.txt | wc
+
+
+
+压缩解压命令：
+		gzip 文件	压缩文件（只能压缩文件，不能压缩目录、不保留原来的文件、同时多个文件会产生多个压缩包）
+		gunzip 文件.gz	解压文件
+		ls -lh		分行列出所有文件目录（并列出总用量）
+		
+		zip 文件					压缩文件（正常压缩文件和目录，不影响原文件目录）
+		zip -r 压缩成文件的名字 要压缩的目录		递归压缩目录并命名
+		unzip xxx.zip					解压文件
+		unzip -d 目标目录 xxx.zip			解压文件到指定目录
+		
+		tar [选项] XXX.tar.gz		打包/解包文件目录
+			-c	产生.tar打包文件
+			-v	显示详细压缩信息
+			-f	指定压缩后的文件名		eg：tar -zcvf 指定的文件名.tar.gz [要打包的所有文件或目录，用空格隔开]
+			-z	打包的同时压缩（使用gzip）	    tar -zxvf xxx.tar.gz -C /解压到的目录
+			-x	解包.tar文件
+			-C	解压到指定目录
+			
+
+		
+磁盘管理类命令：
+		yum install tree		安装tree插件
+		tree 目录			查看指定目录的树状结构信息（包括子目录文件）
+		ls -lh				只能看到可显示出来的目录文件的总用量，不全面
+		du [选项] 目录/文件		查看指定目录/文件的磁盘占用情况（显示目录下每个子目录的使用情况）(disk usage)
+			-a 		不仅查看子目录大小，还要包括文件
+			-h 		以人们更易阅读的GB、MB、KB显示，原来为B（human readen）			
+			-c		显示所有的文件和子目录大小后，显示总和(多余的命令，和.目录的大小一致)	eg：du -ah / du -sh / du --max-depth=1 -ah
+			-s 		只显示总和
+			--max-depth=n	指定统计子目录的深度为第n层(所有选项只限制打印出来的内容，不影响总和)
+		
+		df -h		显示磁盘占用情况（总容量、已用、可用、挂载点）（disk free）
+		free -h 	显示内存占用情况（包括swap虚拟内存）
+		lsblk		查看设备挂载情况
+		lsblk -f 	查看设备挂在情况和uuid
+		
+		mount 设备名 挂载点	设置挂载点	eg：设置光盘挂载点：mount /dev/cdrom /mnt/cdrom
+		umount 设备名		取消挂载点	eg：		    umount /dev/cdrom
+		vim /etc/fstab		在配置文件中写入开机自动配置挂载点
+		
+		fdisk -l			显示当前磁盘的详细信息
+		mkfs -t 文件类型(xfs) 设备名	设置磁盘分区	eg：mkfs -t xfs /dev/sdb1
+								添加新磁盘步骤：设置分区mkfs --> 设置挂载点
+
+
+
+进程/服务管理类命令：
+		服务(以d结尾如systemd):守护进程与服务是一一对应的，可以认为是一回事
+		ps [选项]		显示当前用户和终端正在运行的进程
+			a	列出带有终端的用户的所有用户进程
+			x	列出当前用户的所有进程，包括没有终端的进程		eg：ps aux | grep xxx		查看系统中所有的进程的内存占用
+			u	面向用户友好的显示风格
+			-e	列出所有进程
+			-u	列出某个用户关联的所有进程			eg：ps -ef | grep xxx		查看子父进程之间的关系
+			-f	显示完整的进程列表
+		
+		kill [选项] 进程好pid		通过进程号杀死进程
+			-9 	强制杀死
+		killall 进程名称		通过进程名称杀死进程
+		
+		yum install pstree 	安装pstree
+		pstree [选项]		查看进程树（也可看到父子进程的关系）
+			-p	显示进程号pid
+			-u	显示进程的所属用户
+		
+		top [选项]		实时查看系统进程	shift + p:pid升序、shift + n:pid降序
+			-d 秒数		指定top每隔几秒更新
+			-i		使top不显示任何闲置或者僵尸进程
+			-p 		通过指定PID来仅仅监控某个线程的状态
+		
+		netstat [选项]		显示网络状态和端口占用信息
+			-a	显示正在监听和未监听的套接字（socket）		
+			-n	拒绝显示别名，能显示数字的全部转化成数字	netstat -anp | grep 进程号	查看该进程网络信息
+			-l	仅列出在监听的服务状态				netstat -nlp | grep 端口号	查看网路端口号的占用情况
+			-p	表示显示哪个进程在调用
+
+		
+系统定时任务：
+		systemctl restart crond
+		crontab [选项]		系统定时任务
+			-e	编辑crontab定时任务
+			-l	查询crontab任务
+			-r	删除当前用户的所有crontab任务
+		
+
+
+软件包管理命令：
+		RPM(RedHat Package Manager)：RedHat软件包管理工具
+		rpm -qa			查看所有已经安装的软件包
+		rpm -qa | grep xxx
+		rpm -qi xxx		检索xxx.rpm
+		
+		rpm -e PRM软件包	卸载软件包
+		rpm -e --nodeps		强制卸载软件包，不考虑软件之间的依赖关系
+		
+		rpm -ivh PRM包全名	安装软件包（-v：显示详细信息、-h：显示进度条）
+		rpm --nodeps 		不考虑依赖
+
+
+		YUM(Yellow dog Updater,Modified)：Redora和RedHat以及CentOS中的Shell前端软件包管理器，能够从指定服务器自动下载RPM包并且安装，
+						可以自动处理依赖关系，并且一次安装所有依赖的软件包，无需繁琐地一次次下载安装
+		yum [选项] [参数]	安装/更新/删除...rpm包
+			选项：	-y		对所有提问都回答yes
+			参数：	install		安装
+				update		更新
+				check-update	检查是否有更新
+				remove		删除
+				list		显示软件包信息
+				clean		清理yum过期的缓存
+				deplist		显示yum软件包的所有依赖关系
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	

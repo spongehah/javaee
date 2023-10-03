@@ -1,0 +1,894 @@
+
+尚硅谷笔记地址：https://www.yuque.com/atguigu/springboot
+
+========================自动装配=======================================
+
+@SpringApplication[(scanBasePackages="com.atguigu")] == @SpringBootConfiguration + @EnableAutoConfiguration + @ComponentScan("com.atguigu.boot")
+
+@Configuration[(proxyBeanMethods = true)]：标注为配置类，等价于设置spring等的xml文件，可以设置bean.        告诉SpringBoot这是一个配置类 == 配置文件  默认为true:单实例 false:多实例
+
+@Import({User.class, DBHelper.class})：给容器中自动创建出这两个类型的组件、默认组件的名字就是全类名
+
+@ConditionalOnBean(name = "tom")/ @ConditionalOnMissingBean(name = "tom")：条件装配
+
+@ImportResource("classpath:beans.xml")：导入配置spring方式的配置文件
+
+@Component：将类放入容器中
+@ConfigurationProperties(prefix = "mycar")：只有在容器中的组件，才会拥有SpringBoot提供的强大功能，prefix为properties文件中的赋值语句的前缀,也可以不跟component联用，可以跟下一个EnableConfigurationProperties联用
+@EnableConfigurationProperties(Car.class)开启Car配置绑定功能，把这个Car这个组件自动注册到容器中
+
+自动配置：
+● SpringBoot先加载所有的自动配置类  xxxxxAutoConfiguration
+● 每个自动配置类按照条件进行生效，默认都会绑定配置文件指定的值。xxxxProperties里面拿。xxxProperties和配置文件进行了绑定
+● 生效的配置类就会给容器中装配很多组件( @Conditional按需开启自动装配项)
+● 只要容器中有这些组件，相当于这些功能就有了
+● 定制化配置
+  ○ 用户直接自己 @Bean替换底层的组件
+  ○ 用户去看这个组件是获取的配置文件什么值就去修改。
+xxxxxAutoConfiguration ---> 组件  ---> xxxxProperties里面拿值(只是一个java类，使用了 @ConfigurationProperties(prefix = "xxxx")和 @EnableConfigurationProperties(xxxx.class)，其值又从application.properties里的对应前缀拿值)  ----> application.properties
+
+● 查看自动配置了哪些（选做）
+  ○ 自己分析，引入场景对应的自动配置一般都生效了
+  ○ 配置文件中debug=true开启自动配置报告。Negative（不生效）\Positive（生效）
+
+
+
+
+
+
+=============================lombok===================================
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString
+@EqualsAndHashCode
+
+
+
+
+
+
+
+=============================Web各个类的作用============================
+DispatcherServlet:SpringMVC默认启动servlet,处理请求映射
+● SpringMVC功能分析都从 org.springframework.web.servlet.DispatcherServlet --> doDispatch()方法
+
+所有的请求映射都在HandlerMapping中。
+
+● SpringBoot自动配置欢迎页的 WelcomePageHandlerMapping 。访问 /能访问到index.html；
+● SpringBoot自动配置了默认 的 RequestMappingHandlerMapping
+● 请求进来，挨个尝试所有的HandlerMapping看是否有请求信息。(处理controller的请求)
+  ○ 如果有就找到这个请求对应的handler
+  ○ 如果没有就是下一个 HandlerMapping
+● 我们需要一些自定义的映射处理，我们也可以自己给容器中放HandlerMapping。自定义 HandlerMapping
+
+
+CharacterEncodingFilter:设置字符串编码的过滤器
+
+HiddenHttpMethodFilter:处理请求映射的过滤器，使请求方式Delete和Put生效
+Rest原理（表单提交要使用REST的时候）
+● 表单提交会带上_method=PUT
+● 请求过来被HiddenHttpMethodFilter拦截
+  ○ 请求是否正常，并且是POST
+    ■ 获取到_method的值。_method的名称可修改，自己写一个 @bean public HiddenHttpRequestFilter hiddenHttpMethodFilter()
+    ■ 兼容以下请求；PUT.DELETE.PATCH
+    ■ 原生request（post），包装模式requesWrapper重写了getMethod方法，返回的是传入的值。
+    ■ 过滤器链放行的时候用wrapper。以后的方法调用getMethod是调用requesWrapper的。
+
+
+ReturnValueHandler:返回值处理器
+
+
+MultipartResolver：文件上传解析器
+				文件上传的表单格式：
+			 <form role="form" th:action="@{/upload}" method="post" enctype="multipart/form-data">
+			 若为多文件上传，应指明multiple：<input type="file" name="photos" multiple>
+			在配置文件中可设置单个文件的最大空间和所有文件的最大空间：
+				servlet:
+					 multipart:
+						max-file-size: 10MB   #设置文件上传功能单个文件的最大大小
+						max-request-size: 100MB   #设置文件上传功能所有文件的最大大小
+
+			文件上传的controller实现请看文件上传文档
+
+
+
+
+
+
+
+
+==================================拦截器Interceptor===============================
+Interceptor： 拦截器（具体在boot-05-web-admin）
+										eg：LoginInterceptor implements HandlerInterceptor：登录检查拦截器
+															@Override
+																 public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+
+																	  String requestURI = request.getRequestURI();
+																	  log.info("preHandle拦截的请求路径是{}",requestURI);
+
+																	  //登录检查逻辑
+																	  HttpSession session = request.getSession(false);
+
+																	  Object loginUser = session.getAttribute("loginUser");
+
+																	  if(loginUser != null){
+																			//放行
+																			return true;
+																	  }
+
+																	  //拦截住。未登录。跳转到登录页
+																	  request.setAttribute("msg","请先登录");
+															//        re.sendRedirect("/");
+																	  request.getRequestDispatcher("/").forward(request,response);
+																	  return false;
+																 }
+									在config中重写WebMvcConfigurer的addInterceptors()方法：
+									//也可以在yaml配置文件中开启静态资源的访问前缀/res/
+										@Override
+											 public void addInterceptors(InterceptorRegistry registry) {
+												  registry.addInterceptor(new LoginInterceptor())
+															 .addPathPatterns("/**")  //所有请求都被拦截包括静态资源
+															 .excludePathPatterns("/","/login","/css/**","/fonts/**","/images/**","/js/**"); //放行的请求
+											 }
+
+
+		拦截器原理
+		1、根据当前请求，找到HandlerExecutionChain【可以处理请求的handler以及handler的所有 拦截器】
+		2、先来顺序执行 所有拦截器的 preHandle方法
+				● 1、如果当前拦截器prehandler返回为true。则执行下一个拦截器的preHandle
+				● 2、如果当前拦截器返回为false。直接    倒序执行所有已经执行了的拦截器的  afterCompletion；
+		3、如果任何一个拦截器返回false。直接跳出不执行目标方法
+		4、所有拦截器都返回True。执行目标方法
+		5、倒序执行所有拦截器的postHandle方法。
+		6、前面的步骤有任何异常都会直接倒序触发 afterCompletion
+		7、页面成功渲染完成以后，也会倒序触发 afterCompletion
+
+
+
+
+
+
+
+
+==================================内容协商原理 Converter类========================
+
+浏览器 <--> 服务器之间的数据传输
+
+xxxxConverter: 内容协商中处理数据类型(xml/json....或者自定义类型)的类型
+		自定义输入converter：重写WeMvcConfigurer中的addFormatters(项目boot-05-web-01中config类中写到)
+											 //自定义表单的输入方式，自定义Converter：当输入name,age时，让springboot知道这是一个Pet类型类型，能够封装成POJO
+											 //自定义输入格式，该处为将网页输入的 阿猫,3 该格式存入为一个Pet实体对象
+											 @Override
+											 public void addFormatters(FormatterRegistry registry) {
+												  registry.addConverter(new Converter<String, Pet>() {
+														@Override
+														public Pet convert(String source) {
+															 if(!StringUtils.isEmpty(source)){
+																  Pet pet =  new Pet();
+																  String[] split = source.split(",");
+																  pet.setName(split[0]);
+																  pet.setAge(split[1]);
+																  return pet;
+															 }
+															 return null;
+														}
+												  });
+											 }
+		自定义输出的MessageConverter格式：重写WeMvcConfigurer中的extendMessageConverters(项目boot-05-web-01中config类中写到) 
+													首先需要自己写一个GuiguMessageConverter implements HttpMessageConverter<Person> 
+												//拓展MessageConverter,将自定义的Converter加入到底层源码中
+												@Override
+												 public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
+													  converters.add(new GuiguMessageConverter());
+												 }
+		自定义内容协商支持的converter格式：重写WeMvcConfigurer中的configureContentNegotiation
+										//自定义内容协商策略
+											 @Override
+											 public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
+												  Map<String, MediaType> mediaTypes = new HashMap<>();
+												  mediaTypes.put("json", MediaType.APPLICATION_JSON);
+												  mediaTypes.put("xml",MediaType.APPLICATION_XML);
+												  mediaTypes.put("gg",MediaType.parseMediaType("application/x-guigu"));
+
+												  //指定支持解析哪些参数对应的哪些媒体类型      
+												  ParameterContentNegotiationStrategy parameterStrategy = new ParameterContentNegotiationStrategy(mediaTypes);
+												  //自定以format的名字为ff
+												  //parameterStrategy.setParameterName("ff");  
+
+												  //因为自定义了，所以原来的功能被覆盖掉，可以加上HeaderContentNegotiationStrategy，向原来靠近
+												  HeaderContentNegotiationStrategy headStrategy = new HeaderContentNegotiationStrategy();
+												  configurer.strategies(Arrays.asList(parameterStrategy,headStrategy));
+											 }
+		需要引入jackson依赖，要开启浏览器请求参数内容协商模式的话，需要在yaml配置文件中设置favor-parameter: true，在浏览器访问路径的最后加上format=xml指定输出的数据类型
+
+		<!--内容协商原理jackson包：支持所有类型的数据-->
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-xml</artifactId>
+        </dependency>
+
+	spring:
+	  mvc:
+		 contentnegotiation:
+			favor-parameter: true   #开启浏览器请求参数内容协商模式，引入jackson依赖后，可在浏览器访问路径的最后加上format=xml
+
+
+
+
+
+
+
+
+
+
+
+=============================application.yaml==========================
+
+##################################  数据库配置  ########################################
+################  MySQL配置  ################
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/db_test
+    username: root
+    password: zw2635879218
+    driver-class-name: com.mysql.cj.jdbc.Driver
+        
+##############  Druid数据源  ###############
+    druid:
+      aop-patterns: com.spongehah.boot.*  #监控SpringBean
+      
+      stat-view-servlet: # 配置监控页功能
+        enabled: true
+        login-username: spongehah
+        login-password: 111111
+        resetEnable: true   #重置按钮
+      
+      web-stat-filter: # 监控web
+        enabled: true
+        urlPattern: /*
+        exclusions: '/css/*,/js/*,/images/*,/fonts/*,*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*'
+      
+      filters: stat,wall     # 底层开启功能，stat（sql监控），wall（防火墙）      
+      filter:
+        stat: # 对上面filters里面的stat的详细配置
+          enabled: true
+          slow-sql-millis: 1000
+          logSlowSql: true
+        wall: # 对上面filters里面的wall的详细配置
+          enabled: true
+          config:
+            drop-table-allow: false      
+            
+################  Redis配置  ###########
+#  redis:
+#    database: 0
+#    host: 192.168.111.100
+#    port: 6379
+#    password: zw2635879218@
+#    client-type: lettuce      #jedis时更换为jedis
+#    lettuce:     #在这个下面设置jedis或者lettuce的具体配置
+#      pool:
+#        max-active: 8
+#        max-wait: -1ms
+#        max-idle: 8
+#        min-idle: 0
+    
+
+#######################################################################################
+
+  
+#####################################  MVC配置  ########################################
+  mvc:
+    hiddenmethod:
+      filter:
+        enabled: true   #开启页面表单的Rest功能，实现表单的delete和put提交方式
+    contentnegotiation:
+      favor-parameter: true   #开启浏览器请求参数内容协商模式，引入jackson依赖后，可在浏览器访问路径的最后加上format=xml
+    
+##################################  静态资源配置  ########################################    
+#    #默认无前缀
+#    #当前项目 + static-path-pattern + 静态资源名 = 静态资源文件夹下找
+#    #在浏览器访问静态资源时，要加上/res/才能访问到静态资源
+#    #会导致 index.html不能被默认访问，也会导致 Favicon 功能失效
+#    #设置访问前缀的话，方便过滤静态资源，但是又会导致index页面和网页图标favicon失效
+#    static-path-pattern: /res/**
+#  web:
+#    resources:
+#      #静态资源默认文件夹位置，也就是静态资源会自动到/haha/下去匹配
+#      #在这里，浏览器访问路径静态资源路径应该为：/res/img1.png   并没有输入/haha/，但是会默认到/haha/下去找
+#      static-locations: [ classpath:/haha/ ]
+#      #设置是否能访问静态资源，若为false，则禁用所有静态资源规则
+#      add-mappings: true
+#      #设置静态资源的缓存时间，单位为秒，也就是浏览器会将静态资源缓存在浏览器中，就不用再次向服务器请求
+#      cache:
+#        period: 11000
+  
+##################################  文件上传配置  ########################################  
+  servlet:
+    multipart:
+      max-file-size: 10MB   #设置文件上传功能单个文件的最大大小
+      max-request-size: 100MB   #设置文件上传功能所有文件的最大大小
+
+
+
+##################################  actuator指标监控  ########################################
+#  #设置可视化见面的信息
+#  boot:
+#    admin:
+#      client:
+#        url: http://localhost:8888    #可视化界面服务端地址
+#        instance:
+#          prefer-ip: true  #使用ip注册进来
+#  application:
+#    name: boot-05-web-admin
+## management 是所有actuator的配置
+## management.endpoint.端点名.xxx  对某个端点的具体配置
+#management:
+#  endpoints:
+#    enabled-by-default: true  #默认开启所有监控端点  true
+#    web:
+#      exposure:
+#        include: '*' # 以web方式暴露所有端点
+#
+#  endpoint:   #对某个端点的具体配置
+#    health:
+#      show-details: always
+#      enabled: true  
+#  
+#  info:     #springboot2.6以后，需手动开启info
+#    env:
+#      enabled: true
+#info :      #自定义该Web的信息
+#  appName: boot-admin
+#  version: 1.0.0
+#  mavenProjectName: @project.artifactId@  #使用@@可以获取maven的pom文件值
+#  mavenProjectVersion: @project.version@
+
+
+
+
+
+  
+  
+############################  MyBatis配置(引入MyBatis-Plus后不需要)  ##################################            
+#mybatis:
+##  config-location: classpath:mybatis/mybatis-config.xml   #全局配置文件位置    不配置mybatis.configuration时，应把全局配置文件写到xml文件中
+#  mapper-locations: classpath:mybatis/mapper/*.xml  #sql映射文件位置
+#  configuration:  # 指定mybatis全局配置文件中的相关配置项    若是配置了此项，则不能配置config-location，否则会报'configuration' and 'configLocation' can not specified with together
+#    map-underscore-to-camel-case: true  #驼峰命名法
+
+##################################  其它配置  ########################################
+#server:
+#  servlet:
+#    context-path: /world     #项目访问前缀
+
+
+
+
+
+
+
+
+
+=============================controller中请求的注解和常用类================
+@PathVariable（路径变量）				/car/{id}	@PathVariable("id") Integer id
+
+@RequestHeader（获取请求头）			@RequestHeader("User-Agent") String userAgent
+
+@RequestParam（获取请求参数）			/car?id=xxx		@RequestParam("id") Integer id
+
+@RequestPart(获取请求文件)			多用于文件上传的时候
+
+@CookieValue（获取cookie值）			@CookieValue("_ga") String _ga		/  	@CookieValue("_ga") Cookie cookie)
+
+@RequestBody（获取请求体[POST]）			@RequestBody String content			与 @ResponseBody对应，都是rest风格
+
+@RequestAttribute（获取request域属性）			@RequestAttribute("msg") String msg
+
+@MatrixVariable（矩阵变量）//1、语法： 请求路径：/cars/sell;low=34;brand=byd,audi,yd
+									//2、SpringBoot默认是禁用了矩阵变量的功能
+  								  //  手动开启：原理。对于路径的处理。UrlPathHelper进行解析。在WebMVCConfigurer中配置重写configurePathMatch(项目boot-05-web-01中config类中写到)
+																@Override
+																 public void configurePathMatch(PathMatchConfigurer configurer) {
+																	  UrlPathHelper urlPathHelper = new UrlPathHelper();
+																	  urlPathHelper.setRemoveSemicolonContent(false);
+																	  //不移除分号;后面的内容。矩阵变量功能就可以生效
+																	  configurer.setUrlPathHelper(urlPathHelper);
+																 }
+    								//              removeSemicolonContent（移除分号内容）支持矩阵变量的
+   								 //3、矩阵变量必须有url路径变量才能被解析
+						/cars/{path}			@MatrixVariable("low") Integer low          @MatrixVariable("brand") List<String> brand
+
+
+
+RedirectAttribute  
+			response数据：重定向数据不能共用，重定向后没有域数据了
+
+Map、Model、ModelAndView（map、model、ModelAndView里面的数据会被放在request的请求域  request.setAttribute）
+						request数据：请求转发联通数据，转发后域数据还在
+
+
+
+
+
+
+
+
+=========================================thymeleaf============================
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+
+
+
+
+
+=========================================druid数据源===========================
+druid官方github地址：https://github.com/alibaba/druid
+SpringBoot配置示例：https://github.com/alibaba/druid/tree/master/druid-spring-boot-starter
+配置项列表：https://github.com/alibaba/druid/wiki/DruidDataSource%E9%85%8D%E7%BD%AE%E5%B1%9E%E6%80%A7%E5%88%97%E8%A1%A8
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>druid-spring-boot-starter</artifactId>
+            <version>1.1.17</version>
+        </dependency>
+		  使用https://localhost:8080/druid访问druid监控页
+
+● 扩展配置项 spring.datasource.druid
+● DruidSpringAopConfiguration.class,   监控SpringBean的；配置项：spring.datasource.druid.aop-patterns
+● DruidStatViewServletConfiguration.class, 监控页的配置：spring.datasource.druid.stat-view-servlet；默认开启
+●  DruidWebStatFilterConfiguration.class, web监控配置；spring.datasource.druid.web-stat-filter；默认开启
+● DruidFilterConfiguration.class}) 所有Druid自己filter的配置
+可配置的所有的filter：
+    private static final String FILTER_STAT_PREFIX = "spring.datasource.druid.filter.stat";
+    private static final String FILTER_CONFIG_PREFIX = "spring.datasource.druid.filter.config";
+    private static final String FILTER_ENCODING_PREFIX = "spring.datasource.druid.filter.encoding";
+    private static final String FILTER_SLF4J_PREFIX = "spring.datasource.druid.filter.slf4j";
+    private static final String FILTER_LOG4J_PREFIX = "spring.datasource.druid.filter.log4j";
+    private static final String FILTER_LOG4J2_PREFIX = "spring.datasource.druid.filter.log4j2";
+    private static final String FILTER_COMMONS_LOG_PREFIX = "spring.datasource.druid.filter.commons-log";
+    private static final String FILTER_WALL_PREFIX = "spring.datasource.druid.filter.wall";
+
+
+	 配置文件见application.yaml
+
+
+
+
+
+=========================================整合MyBatis=============================
+依赖版本号不能太高，否则springboot项目无法启动
+        <dependency>
+            <groupId>org.mybatis.spring.boot</groupId>
+            <artifactId>mybatis-spring-boot-starter</artifactId>
+            <version>2.1.4</version>
+        </dependency>
+
+		  
+● 导入mybatis官方starter
+● 编写mapper接口。标注 @Mapper注解
+● 编写sql映射文件并绑定mapper接口
+● 在application.yaml中指定Mapper配置文件的位置，以及指定全局配置文件的信息 （建议；配置在yaml配置文件的mybatis.configuration项下）
+
+● 引入mybatis-starter
+● 配置application.yaml中，指定mapper-location位置即可
+● 编写Mapper接口并标注 @Mapper注解
+● 简单方法直接注解方式
+● 复杂方法编写mapper.xml进行绑定映射
+● @MapperScan("com.atguigu.admin.mapper") 简化，其他的接口就可以不用标注 @Mapper注解
+
+	 配置文件见application.yaml
+
+
+
+
+
+
+=========================================整合MyBatis-Plus=============================
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-boot-starter</artifactId>
+            <version>3.4.1</version>
+        </dependency>
+自动配置
+● MybatisPlusAutoConfiguration 配置类，MybatisPlusProperties 配置项绑定。mybatis-plus：xxx 就是对mybatis-plus的定制
+● SqlSessionFactory 自动配置好。底层是容器中默认的数据源
+● mapperLocations 自动配置好的。有默认值。classpath*:/mapper/**/*.xml；任意包的类路径下的所有mapper文件夹下任意路径下的所有xml都是sql映射文件。  建议以后sql映射文件，放在 mapper下
+● 容器中也自动配置好了 SqlSessionTemplate
+● @Mapper 标注的接口也会被自动扫描；建议直接 @MapperScan("com.atguigu.admin.mapper") 批量扫描就行
+● 只需要我们的Mapper继承 BaseMapper<实体类> ，Service继承IService<实体类>，ServiceImpl<Mapper,实体类>继承ServiceImpl就可以拥有crud能力
+
+若要使用分页功能：需要写配置类：（但是推荐使用GitHub的分页插件，详情看分页文件笔记）
+						@Configuration
+						public class MyBatisPlusConfig {
+							 
+							 @Bean
+							 public MybatisPlusInterceptor paginationInterceptor(){
+								  MybatisPlusInterceptor mybatisPlusInterceptor = new MybatisPlusInterceptor();
+								  // 设置请求的页面大于最大页后操作， true调回到首页，false 继续请求  默认false
+								  // paginationInterceptor.setOverflow(false);
+								  // 设置最大单页限制数量，默认 500 条，-1 不受限制
+								  // paginationInterceptor.setLimit(500);
+								  // 开启 count 的 join 优化,只针对部分 left join
+
+								  //这是分页拦截器
+								  PaginationInnerInterceptor paginationInnerInterceptor = new PaginationInnerInterceptor();
+								  paginationInnerInterceptor.setOverflow(true);
+								  paginationInnerInterceptor.setMaxLimit(500L);
+								  mybatisPlusInterceptor.addInnerInterceptor(paginationInnerInterceptor);
+
+
+								  //添加乐观锁拦截器
+								  mybatisPlusInterceptor.addInnerInterceptor(new OptimisticLockInnerInterceptor());
+
+								  
+								  return mybatisPlusInterceptor;
+							 }
+						}
+
+=========================================整合Redis=============================
+        <!--RedisTemplate 默认使用lettuce-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <!--导入jedis 要在配置文件中将client-type设置为jedis才能生效-->
+        <!--<dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+        </dependency>-->
+
+
+					@Test
+					 void testRedis(){
+						  ValueOperations<String, String> operations = redisTemplate.opsForValue();
+
+						  operations.set("hello","world");
+
+						  String hello = operations.get("hello");
+						  System.out.println(hello);
+					 }
+
+					 可实现对请求uri的计数功能，自写一个
+															@Component
+															public class RedisUrlCountInterceptor implements HandlerInterceptor {
+																 
+																 @Autowired
+																 StringRedisTemplate redisTemplate;
+
+																 @Override
+																 public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+																	  String uri = request.getRequestURI();
+																	  redisTemplate.opsForValue().increment(uri);
+																	  return true;
+																 }
+															}
+					然后在WebMvcConfiguration的addInterceptors中添加拦截器：
+														  registry.addInterceptor(redisUrlCountInterceptor)
+																	 .addPathPatterns("/**")
+																	 .excludePathPatterns("/","/login","/css/**","/fonts/**","/images/**","/js/**");
+
+
+
+=========================================JUnit5=============================
+JUnit5常用注解
+		详情看https://www.yuque.com/atguigu/springboot/ksndgx#5Eyf9
+
+		JUnit5的注解与JUnit4的注解有所变化
+		https://junit.org/junit5/docs/current/user-guide/#writing-tests-annotations
+		● @Test :表示方法是测试方法。但是与JUnit4的 @Test不同，他的职责非常单一不能声明任何属性，拓展的测试将会由Jupiter提供额外测试
+		● @ParameterizedTest :表示方法是参数化测试，下方会有详细介绍
+		● @RepeatedTest :表示方法可重复执行，下方会有详细介绍
+		● @DisplayName :为测试类或者测试方法设置展示名称
+		● @BeforeEach :表示在每个单元测试之前执行
+		● @AfterEach :表示在每个单元测试之后执行
+		● @BeforeAll :表示在所有单元测试之前执行
+		● @AfterAll :表示在所有单元测试之后执行
+		● @Tag :表示单元测试类别，类似于JUnit4中的 @Categories
+		● @Disabled :表示测试类或测试方法不执行，类似于JUnit4中的 @Ignore
+		● @Timeout :表示测试方法运行如果超过了指定时间将会返回错误
+		● @ExtendWith :为测试类或测试方法提供扩展类引用
+
+断言
+		assertEquals
+		判断两个对象或两个原始类型是否相等
+		assertNotEquals
+		判断两个对象或两个原始类型是否不相等
+		assertSame
+		判断两个对象引用是否指向同一个对象
+		assertNotSame
+		判断两个对象引用是否指向不同的对象
+		assertTrue
+		判断给定的布尔值是否为 true
+		assertFalse
+		判断给定的布尔值是否为 false
+		assertNull
+		判断给定的对象引用是否为 null
+		assertNotNull
+		判断给定的对象引用是否不为 null
+		assertArrayEquals 
+		判断两个对象或原始类型的数组是否相等
+		assertAll
+		接受多个 org.junit.jupiter.api.Executable 函数式接口的实例作为要验证的断言
+		assertThrows() 
+		测试方法的异常情况
+		Assertions.assertTimeout() 
+		为测试方法设置了超时时间
+		fail()
+		直接使得测试失败
+
+前置条件（assumptions）
+		JUnit 5 中的前置条件（assumptions【假设】）类似于断言，不同之处在于不满足的断言会使得测试方法失败，而不满足的前置条件只会使得测试方法的执行终止。前置条件可以看成是测试方法执行的前提，当该前提不满足时，就没有继续执行的必要。
+
+嵌套测试
+		JUnit 5 可以通过 Java 中的内部类和 @Nested  注解实现嵌套测试，从而可以更好的把相关的测试方法组织在一起。在内部类中可以使用 @BeforeEach 和 @AfterEach 注解，而且嵌套的层次没有限制。
+
+		参数化测试
+		参数化测试是JUnit5很重要的一个新特性，它使得用不同的参数多次运行测试成为了可能，也为我们的单元测试带来许多便利。
+
+		利用 @ValueSource等注解，指定入参，我们将可以使用不同的参数进行多次单元测试，而不需要每新增一个参数就新增一个单元测试，省去了很多冗余代码。
+
+		@ValueSource: 为参数化测试指定入参来源，支持八大基础类以及String类型,Class类型
+		@NullSource: 表示为参数化测试提供一个null的入参
+		@EnumSource: 表示为参数化测试提供一个枚举入参
+		@CsvFileSource：表示读取指定CSV文件内容作为参数化测试入参
+		@MethodSource：表示读取指定方法的返回值作为参数化测试入参(注意方法返回需要是一个流)
+
+迁移指南
+		在进行迁移的时候需要注意如下的变化：
+		● 注解在 org.junit.jupiter.api 包中，断言在 org.junit.jupiter.api.Assertions 类中，前置条件在 org.junit.jupiter.api.Assumptions 类中。
+		● 把 @Before 和 @After 替换成 @BeforeEach 和 @AfterEach。
+		● 把 @BeforeClass 和 @AfterClass 替换成 @BeforeAll 和 @AfterAll。
+		● 把 @Ignore替换成 @Disabled。
+		● 把 @Category替换成 @Tag。
+		● 把 @RunWith、 @Rule 和  @ClassRule替换成 @ExtendWith。
+
+
+====================================actuator指标监控=============================
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+	访问路径 http://localhost:8080/actuator/xxx
+	
+● 测试
+http://localhost:8080/actuator/beans
+http://localhost:8080/actuator/configprops
+http://localhost:8080/actuator/metrics
+http://localhost:8080/actuator/metrics/jvm.gc.pause
+http://localhost:8080/actuator/endpointName/detailPath
+
+
+最常用的Endpoint
+● Health：监控状况
+● Metrics：运行时指标
+● Loggers：日志记录
+
+暴露Endpoints
+支持的暴露方式
+● HTTP：默认只暴露health和info Endpoint
+● JMX：默认暴露所有Endpoint
+● 除过health和info，剩下的Endpoint都应该进行保护访问。如果引入SpringSecurity，则会默认配置安全访问规则
+
+定制 Health 信息、定制info信息、增加定制Metrics(可用于统计某方法的调用次数)、定制Endpoint（详情实现看文件actuator的实现或boot-05-admin）
+
+
+		可视化界面插件：https://github.com/codecentric/spring-boot-admin
+		客户端：
+			  <!--actuator指标监控可视化界面客户端依赖-->
+			  <dependency>
+					<groupId>de.codecentric</groupId>
+					<artifactId>spring-boot-admin-starter-client</artifactId>
+					<version>2.6.1</version>
+			  </dependency>
+			   #设置可视化见面的信息
+				spring:
+				  boot:
+					 admin:
+						client:
+						  url: http://localhost:8888    #可视化界面服务端地址
+						  instance:
+							 prefer-ip: true  #使用ip注册进来
+				  application:
+					 name: boot-05-web-admin
+
+
+		服务端：
+			  <!--actuator指标监控可视化界面服务端依赖-->
+			  <dependency>
+					<groupId>de.codecentric</groupId>
+					<artifactId>spring-boot-admin-starter-server</artifactId>
+					<version>2.6.1</version>
+			  </dependency>
+
+			  在主程序启动类上加上注解 @EnableAdminServer
+			  设置端口号：server.port=8888
+
+==================================profile环境切换=============================
+application-profile功能
+		● 默认配置文件  application.yaml；任何时候都会加载，在这里指定spring.profiles.active=???	环境配置文件
+		● 指定环境配置文件  application-{env}.yaml
+		● 激活指定环境
+		  ○ 配置文件激活
+		  ○ 命令行激活：java -jar xxx.jar --spring.profiles.active=prod  --person.name=haha
+			 ■ 修改配置文件的任意值，命令行优先
+		● 默认配置与环境配置同时生效
+		● 同名配置项，profile配置优先
+
+		@Profile条件装配功能
+				@Configuration(proxyBeanMethods = false)
+				@Profile("production")
+				public class ProductionConfiguration {
+						
+						@Profile("production")
+						@Bean
+					 // ...
+
+				}
+
+			
+		profile分组
+				spring.profiles.group.production[0]=proddb
+				spring.profiles.group.production[1]=prodmq
+
+				使用：--spring.profiles.active=production  激活
+
+
+ 
+可以使用注解 @Value(${xxx})来获取YAML文件、环境变量中的值
+
+
+
+外部配置源
+常用：Java属性文件、YAML文件、环境变量、命令行参数；
+
+配置文件查找位置
+(1) classpath 根路径
+(2) classpath 根路径下config目录
+(3) jar包当前目录
+(4) jar包当前目录的config目录
+(5) /config子目录的直接子目录
+
+配置文件加载顺序：
+1. 　当前jar包内部的application.properties和application.yml
+2. 　当前jar包内部的application-{profile}.properties 和 application-{profile}.yml
+3. 　引用的外部jar包的application.properties和application.yml
+4. 　引用的外部jar包的application-{profile}.properties 和 application-{profile}.yml
+指定环境优先，外部优先，后面的可以覆盖前面的同名配置项
+
+
+
+=========================================原生Servlet=============================
+使用Servlet API(具体看boot-05-web-admin)
+@ServletComponentScan(basePackages = "com.atguigu.admin") :指定原生Servlet组件都放在那里,在主启动程序声明
+@WebServlet(urlPatterns = "/my")：效果：直接响应，没有经过Spring的拦截器？  标注MyServlet extends HttpServlet
+															精确路径优先原则，/my路径会匹配到MyServlet，不会匹配到DispatcherServlet,所以不经过mvc的启动流程，将直接由tomcat启动，是所以没有经过拦截器
+
+@WebFilter(urlPatterns={"/css/*","/images/*"})										 标注MyFilrer implements Filter
+@WebListener																			标注MyServletContextLister implements ServletContextListener
+
+
+如果不使用 @WebServlet @WebFilter @WebListener标注的话，可以自己写一个配置类MyRegistConfig @Configuration
+里面写ServletRegistrationBean myServlet() FilterRegistrationBean myFilter() ServletListenerRegistrationBean myServletContextListener()方法，并把他们都放到容器中 @Bean
+
+
+
+
+
+				若要使用其他服务器，不使用tomcat：在pom.xml中，springboot-start的依赖中<excludes>不引入tomcat的依赖
+																			然后单独引入其他服务器的依赖
+
+
+
+
+
+
+
+
+
+========================================异常处理ExceptionHandler=========================
+（具体看boot-05-web-admin/../exception：）
+													可以自定义异常
+													自定义异常返回视图地址
+													自定义处理程序异常解析器
+
+
+
+
+
+=========================================定制SpringMvc=========================================
+定制化的常见方式 
+● 修改配置文件；（推荐）
+● xxxxxCustomizer；
+● 编写自定义的配置类   xxxConfiguration；+ @Bean替换、增加容器中默认组件；视图解析器 
+● Web应用 编写一个配置类实现 WebMvcConfigurer 即可定制化web功能；+ @Bean给容器中再扩展一些组件
+							@Configuration
+							public class AdminWebConfig implements WebMvcConfigurer（推荐）
+
+
+@EnableWebMvc + WebMvcConfigurer —— @Bean  可以全面接管SpringMVC，所有规则全部自己重新配置； 实现定制和扩展功能（慎用，因为会导致WebMvcAutoConfiguration 不生效，所有规则全部自己重新配置才能正常使用）
+
+									往AdminWebConfig中放入WebMvcRegistrations将可以定制mvc更底层的功能
+												@Bean
+												 public WebMvcRegistrations webMvcRegistrations(){
+													  return new WebMvcRegistrations(){
+															@Override
+															public RequestMappingHandlerMapping getRequestMappingHandlerMapping() {
+																 return null;
+															}
+															.............	
+													  };
+												 }
+
+
+=========================================自定义starter=========================================
+● autoconfigure包中配置使用 META-INF/spring.factories 中 EnableAutoConfiguration 的值，使得项目启动加载指定的自动配置类
+● 编写自动配置类 xxxAutoConfiguration -> xxxxProperties
+  ○ @Configuration
+  ○ @Conditional
+  ○ @EnableConfigurationProperties
+  ○ @Bean
+  ○ ......
+引入starter --- xxxAutoConfiguration --- 容器中放入组件 ---- 绑定xxxProperties ---- 配置项
+
+
+自定义starter	（详情见老师源码部分boot-09-customer-starter和boot-09-hello-test）
+		atguigu-hello-spring-boot-starter（启动器）
+		atguigu-hello-spring-boot-starter-autoconfigure（自动配置包）
+
+
+
+
+=========================================SpringBoot启动过程=========================================
+
+SpringBoot启动过程
+● 创建 SpringApplication
+  ○ 保存一些信息。
+  ○ 判定当前应用的类型。ClassUtils。Servlet
+  ○ bootstrappers：初始启动引导器（List<Bootstrapper>）：去spring.factories文件中找 org.springframework.boot.Bootstrapper
+  ○ 找 ApplicationContextInitializer；去spring.factories找 ApplicationContextInitializer
+    ■ List<ApplicationContextInitializer<?>> initializers
+  ○ 找 ApplicationListener  ；应用监听器。去spring.factories找 ApplicationListener
+    ■ List<ApplicationListener<?>> listeners
+● 运行 SpringApplication
+  ○ StopWatch
+  ○ 记录应用的启动时间
+  ○ 创建引导上下文（Context环境）createBootstrapContext()
+    ■ 获取到所有之前的 bootstrappers 挨个执行 intitialize() 来完成对引导启动器上下文环境设置
+  ○ 让当前应用进入headless模式。java.awt.headless
+  ○ 获取所有 RunListener（运行监听器）【为了方便所有Listener进行事件感知】
+    ■ getSpringFactoriesInstances 去spring.factories找 SpringApplicationRunListener. 
+  ○ 遍历 SpringApplicationRunListener 调用 starting 方法；
+    ■ 相当于通知所有感兴趣系统正在启动过程的人，项目正在 starting。
+  ○ 保存命令行参数；ApplicationArguments
+  ○ 准备环境 prepareEnvironment（）;
+    ■ 返回或者创建基础环境信息对象。StandardServletEnvironment
+    ■ 配置环境信息对象。
+      ● 读取所有的配置源的配置属性值。
+    ■ 绑定环境信息
+    ■ 监听器调用 listener.environmentPrepared()；通知所有的监听器当前环境准备完成
+  ○ 创建IOC容器（createApplicationContext（））
+    ■ 根据项目类型（Servlet）创建容器，
+    ■ 当前会创建 AnnotationConfigServletWebServerApplicationContext
+  ○ 准备ApplicationContext IOC容器的基本信息   prepareContext()
+    ■ 保存环境信息
+    ■ IOC容器的后置处理流程。
+    ■ 应用初始化器；applyInitializers；
+      ● 遍历所有的 ApplicationContextInitializer 。调用 initialize.。来对ioc容器进行初始化扩展功能
+      ● 遍历所有的 listener 调用 contextPrepared。EventPublishRunListenr；通知所有的监听器contextPrepared
+    ■ 所有的监听器 调用 contextLoaded。通知所有的监听器 contextLoaded；
+  ○ 刷新IOC容器。refreshContext
+    ■ 创建容器中的所有组件（Spring注解）
+  ○ 容器刷新完成后工作？afterRefresh
+  ○ 所有监听 器 调用 listeners.started(context); 通知所有的监听器 started
+  ○ 调用所有runners；callRunners()
+    ■ 获取容器中的 ApplicationRunner 
+    ■ 获取容器中的  CommandLineRunner
+    ■ 合并所有runner并且按照@Order进行排序
+    ■ 遍历所有的runner。调用 run 方法
+  ○ 如果以上有异常，
+    ■ 调用Listener 的 failed
+  ○ 调用所有监听器的 running 方法  listeners.running(context); 通知所有的监听器 running 
+  ○ running如果有问题。继续通知 failed 。调用所有 Listener 的 failed；通知所有的监听器 failed
