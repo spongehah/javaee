@@ -17,7 +17,6 @@ setter注入、构造器注入
  
 AOP: @EnableAspectJAutoProxy + @Aspect @Component
 		+ @PointCut("execution(访问修饰符(可省略) 返回值 包名.类/接口名.方法名(参数))") + @Before / @After("pt()")
-	@PointCut声明的方法需为private void
 
 可以使用通配符描述切入点，快速描述
 		*:单个独立的任意符号，可以独立出现，也可以作为前缀或者后缀的匹配符出现
