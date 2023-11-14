@@ -2,7 +2,7 @@
 
 
 
-# 类的加载过程
+#  类的加载过程
 
 
 
@@ -22,11 +22,11 @@
 
 
 
-## 加载（Loading）
+# 加载（Loading）
 
 
 
-### 加载的理解
+## 加载的理解
 
 <font color='red'>查找编译后该类对应的 .class文件</font>
 
@@ -36,7 +36,7 @@
 
 
 
-### 加载完成的操作
+## 加载完成的操作
 
 <font color='red'>加载阶段，简言之，查找并加载类的二进制数据，生成Class的实例。</font>
 
@@ -48,7 +48,7 @@
 
 
 
-### 类的加载器
+## 类的加载器
 
 - 引导类/启动类 加载器Bootstrap ClassLoader：用c/c++编写，不继承于Classloader类，用于加载Java核心类库等，若要输出该类的对象，将会输出NULL
 - 扩展类加载器Extension ClassLoader：用Java编写，继承于Classloader类
@@ -57,7 +57,7 @@
 
 
 
-### 获取ClassLoader类对象的途径
+## 获取ClassLoader类对象的途径
 
 方式一：获取当前类的ClassLoader
 clazz.getClassLoader()
@@ -70,11 +70,11 @@ DriverManager.getCallerClassLoader()
 
 
 
-## 链接（Linking）
+# 链接（Linking）
 
 
 
-### 验证（Verification）
+## 验证（Verification）
 
 验证class文件是否符合当前虚拟机的要求
 
@@ -132,7 +132,7 @@ DriverManager.getCallerClassLoader()
 
 
 
-### 准备（Preparation）
+## 准备（Preparation）
 
 <font color='red'>为类变量分配内存并设置默认初始值0，并为常量进行显式赋值</font>
 
@@ -170,7 +170,7 @@ Java虚拟机为各类型变量默认的初始值如表所示：
 
 
 
-### 解析（Resolution）
+## 解析（Resolution）
 
 <font color='red'>将常量池内的符号引用转换为直接引用的过程</font>
 
@@ -196,11 +196,11 @@ invokevirtual #24 <java/io/PrintStream.println>
 
 
 
-## 初始化（Initialization）
+# 初始化（Initialization）
 
 <font color='red'>执行类构造器< clinit>()方法的过程，对类的静态变量初始化赋值</font>
 
-### 具体描述
+## 具体描述
 
 类的初始化是类装载的最后一个阶段。如果前面的步骤都没有问题，那么表示类可以顺利装载到系统中。此时，类才会开始执行Java字节码。（即：<font color='cornflowerblue'>到了初始化阶段，才真正开始执行类中定义的Java程序代码</font>。）
 
@@ -230,13 +230,13 @@ invokevirtual #24 <java/io/PrintStream.println>
 
 
 
-### 哪些不会生成< clinit>()方法
+## 哪些不会生成< clinit>()方法
 
 ![image-20230709134249348](image/JVMClassLoading.assets/image-20230709134249348.webp)
 
 
 
-### static+final修饰显式赋值
+## static+final修饰显式赋值
 
 使用static+final修饰的字段的显式赋值的操作，到底是在哪个阶段进行的赋值？
 
@@ -294,7 +294,7 @@ public class InitializationTest {
 
 
 
-## 使用（Using）
+# 使用（Using）
 
 
 
@@ -302,7 +302,7 @@ public class InitializationTest {
 
 调试期间可以添加参数	`-XX:+TraceClassLoading`来打印**类的加载**(Loading)情况
 
-### 主动使用
+## 主动使用
 
 Class只有在必须要首次使用的时候才会被装载，Java虚拟机不会无条件地装载Class类型。Java虚拟机规定，一个类或接口在初次使用前，必须要进行初始化。这里指的“使用”，是指主动使用，主动使用只有下列几种情况：（即：如果出现如下的情况，则会对类进行初始化操作。而初始化操作之前的加载、验证、准备己经完成。)
 
@@ -322,7 +322,7 @@ Class只有在必须要首次使用的时候才会被装载，Java虚拟机不�
 
 
 
-### 被动使用
+## 被动使用
 
 除了以上八种情况，其他使用Java类的方式都被看作是对<font color='red'>类的被动使用，都不会导致类的初始化</font>（<font color='cornflowerblue'>即类的加载过程中的Initialization</font>）
 
@@ -337,7 +337,7 @@ Class只有在必须要首次使用的时候才会被装载，Java虚拟机不�
 
 
 
-### 类的使用
+## 类的使用
 
 任何一个类型在使用之前都必须经历过完整的加载、链接和初始化3个类加载步骤。一旦一个类型成功经历过这3个步骤之后，便“万事俱备，只欠东风”，就等着开发者使用了。
 
@@ -345,11 +345,11 @@ Class只有在必须要首次使用的时候才会被装载，Java虚拟机不�
 
 
 
-## 卸载（Unloading）
+# 卸载（Unloading）
 
 
 
-### 一、类、类的加载器、类的实例之间的引用关系
+## 一、类、类的加载器、类的实例之间的引用关系
 
 在类加载器的内部实现中，用一个]ava集合来存放所加载类的引用。另一方面，一个Class对象总是会引用它的类加载器,调用Class对象的getclassLoader()方法，就能获得它的类加载器。由此可见，代表某个类的Class实例与其类的加载器之间为双向关联关系。
 
@@ -357,7 +357,7 @@ Class只有在必须要首次使用的时候才会被装载，Java虚拟机不�
 
 
 
-### 二、类的生命周期
+## 二、类的生命周期
 
 **当Sample类被加载、链接和初始化后**，它的生命周期就开始了。**当代表Sample类的Class对象不再被引用**，即不可触及
 
@@ -369,7 +369,7 @@ Class只有在必须要首次使用的时候才会被装载，Java虚拟机不�
 
 
 
-### 三、具体例子
+## 三、具体例子
 
 
 
@@ -389,7 +389,7 @@ loader1变量和obj变量间接应用代表Sample类的class对象，而objclass
 
 
 
-### 四、类的卸载
+## 四、类的卸载
 
 (1)**启动类加载咖载的类型在整个运行期间是不可能被卸载的**(jvm和jls规范)
 
@@ -419,7 +419,7 @@ Java虚拟机被允许对满足上述三个条件的无用类进行回收，这�
 
 
 
-## 大厂面试题
+# 大厂面试题
 
 
 
