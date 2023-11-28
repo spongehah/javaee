@@ -57,43 +57,38 @@ public String upload(@RequestParam("email") String email,
 
 
 
-@RequestMapping("/upload")
-public String upload(@RequestParam(value = "email",required = false) String email,
-                     @RequestParam(value = "userName",required = false) String userName,
-                     @RequestPart("headerImg") MultipartFile headerImg,
-                     @RequestPart(value = "photos",required = false) MultipartFile[] photos,
-                     HttpSession session) throws IOException {
+@PostMapping("/upload")
+public String upload(@RequestParam("email") String email,
+                     @RequestParam("username") String username,
+                     @RequestPart("headerImg")MultipartFile headerImg,
+                     @RequestPart("photos") MultipartFile[] photos/*,
+                     HttpSession session*/) throws IOException {
     
-    log.info("上传的信息：email={}，username={}，headerImg={}，photos={}",
-            email,userName,headerImg.getSize(),photos.length);
+    //放到项目运行的web服务器(如tomcat)的真实运行路径
+    /*ServletContext servletContext = session.getServletContext();
+    String photoPath = servletContext.getRealPath("photo");*/
     
-    if(!headerImg.isEmpty()){
-        //获取上传的文件的文件名
-        String fileName = headerImg.getOriginalFilename();
-        //获取上传的文件的后缀名
-        String hzName = fileName.substring(fileName.lastIndexOf("."));
-        //获取uuid
-        String uuid = UUID.randomUUID().toString();
-        //拼接一个新的文件名
-        fileName = uuid + hzName;
-        /*//获取ServletContext对象
-        ServletContext servletContext = session.getServletContext();
-        //获取当前工程下photo目录的真实路径
-        String photoPath = servletContext.getRealPath("photo");*/
-        
-        File file = new File("src/main/resources/static/photo");
-//        log.info(photoPath);
-        //创建photoPath所对应的File对象
-//        File file = new File(photoPath);
-        //判断file所对应目录是否存在
-        if(!file.exists()){
-            file.mkdirs();
-        }
-        String finalPath = file.getAbsolutePath() + File.separator + fileName;
-         
-        log.info(finalPath);
-        //上传文件
-        headerImg.transferTo(new File(finalPath));
-        
+    //放到项目resources目录下的photo文件夹
+    File file = new File("src/main/resources/static/photo");
+    if(!file.exists()){
+        file.mkdirs();
     }
+
+    if (!headerImg.isEmpty()) {
+        String originalFilename = headerImg.getOriginalFilename();
+        String hzName = originalFilename.substring(originalFilename.lastIndexOf("."));
+        String filename = originalFilename.substring(0,originalFilename.lastIndexOf(".")) + UUID.randomUUID().toString() + hzName;
+        headerImg.transferTo(new File(file.getAbsoluteFile() + File.separator + filename));
+    }
+    if(photos.length > 0){
+        for (MultipartFile photo : photos) {
+            if(!photo.isEmpty()){
+                String originalFilename = photo.getOriginalFilename();
+                String hzName = originalFilename.substring(originalFilename.lastIndexOf("."));
+                String filename = originalFilename.substring(0,originalFilename.lastIndexOf(".")) + UUID.randomUUID().toString() + hzName;
+                photo.transferTo(new File(file.getAbsoluteFile() + File.separator + filename));
+            }
+        }
+    }
+    return "main";
 }
