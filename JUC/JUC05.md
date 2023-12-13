@@ -333,7 +333,7 @@ ThreadLocal本身并不存储值(ThreadLocal是一个壳子)，它只是自己�
 
 <font color='cornflowerblue'>为什么源代码用弱引用？</font>
 
-当functione01方法执行完毕后，栈帧销毁强引用t!也就没有了。但此时线程的ThreadLocalMap.里某个entry的key引用还指向这个对象
+当functione01方法执行完毕后，栈帧销毁强引用t1也就没有了。但此时线程的ThreadLocalMap里某个entry的key引用还指向这个对象
 
 - 若这个key引用是<font color='cornflowerblue'>强引用</font>，就会导致key指向的ThreadLocal对象及v指向的对象不能被gc回收，造成内存泄漏；
 - 若这个key引用是<font color='cornflowerblue'>弱引用</font>，就<font color='red'>大概率</font>会减少内存泄漏的问题（<font color='red'>还有一个key为null的雷，第2个坑后面讲</font>）。
@@ -346,7 +346,7 @@ ThreadLocal本身并不存储值(ThreadLocal是一个壳子)，它只是自己�
 
 <font color='cornflowerblue'>使用弱引用为什么还会内存泄露？</font>
 
-- 1当我们为threadLocal变量赋值，实际上就是当前的Entry（threadLocal实例为key，值为value）往这个threadLocalMap中存放。Entry中的key是弱引用，当threadLocal外部强引用被置为null（tl=null），那么系统GC的时候，根据可达性分析，这个threadLocal实例就没有任何一条链路能够引用到它，这个ThreadLocal势必会被回收。这样一来，<font color='red'>ThreadLocalMap中就会出现key为null的Entry，**就没有办法访问这些key为nul的Entry的value**。</font>
+- 1当我们为threadLocal变量赋值，实际上就是当前的Entry（threadLocal实例为key，值为value）往这个threadLocalMap中存放。Entry中的key是弱引用，当threadLocal外部强引用被置为null（tl=null），那么系统GC的时候，根据可达性分析，这个threadLocal实例就没有任何一条链路能够引用到它，这个ThreadLocal势必会被回收。这样一来，<font color='red'>ThreadLocalMap中就会出现key为null的Entry，**就没有办法访问这些key为null的Entry的value**。</font>
   - <font color='red'>如果当前线程再迟迟不结束的话（比如正好在使用**线程池**），这些key为null的Entry的value就会一直存在一条强引用链：   	Thread Ref->Thread->ThreaLocalMap->Entry->value永远无法回收，造成内存泄漏。</font>
 - 2当然，**如果当前thread运行结束**，threadLocal,threadLocalMap,Entry没有引用链可达，在垃圾回收的时候都会被系统进行回收。
 - 3但在实际使用中<font color='cornflowerblue'>我们有时候会用线程池</font>去维护我们的线程，比如在Executors.newFixedThreadPool()时创建线程的时候，为了复用线程是不会结束的，所以threadLocal内存泄漏就值得我们小心
@@ -373,7 +373,7 @@ ThreadLocal本身并不存储值(ThreadLocal是一个壳子)，它只是自己�
 
   - > 19.【参考】ThreadLocal对象使用static修饰，ThreadLocal无法解决共享对象的更新问题。说明：这个变量是针对一个线程内所有操作共享的，所以设置为静态变量，所有此类实例共享此静态变量，也就是说在类第一次被使用时装载，只分配一块存储空间，所有此类的对象（只要是这个线程内定义的）都可以操控这个变量。
     >
-    > ThreadLocali能实现了线程的数据隔离，不在于它自己本身，而在于Thread的ThreadLocalMap
+    > ThreadLocal能实现了线程的数据隔离，不在于它自己本身，而在于Thread的ThreadLocalMap
     > 所以，ThreadLocal可以只初始化一次，只分配一块存储空间就足以了，没必要作为成员变量多次被初始化。
 
 - <font color='red'>用完记得手动remove</font>
@@ -413,7 +413,7 @@ ThreadLocal本身并不存储值(ThreadLocal是一个壳子)，它只是自己�
 
 
 
-在HotSpot)虚拟机里，对象在堆内存中的存储布局可以划分为三个部分：对象头(Header)、实例数据(Instance Data)和对齐填充(Padding)。
+在HotSpot虚拟机里，对象在堆内存中的存储布局可以划分为三个部分：对象头(Header)、实例数据(Instance Data)和对齐填充(Padding)。
 
 - 对象头（Header）
   - 对象标记MarkWord（运行时元数据）

@@ -368,7 +368,7 @@ java -XX:+PrintFlagsInitial |grep BiasedLock*
 - 开启偏向锁：
   - -XX:+UseBiasedLocking（JDK6后默认）		 -XX:BiasedLockingStartupDelay=0
 - 关闭偏向锁：
-  - <font color='red'>关闭之后程序默认会直接进入-------------------------------->>>>>>>	经量级锁状态。</font>
+  - <font color='red'>关闭之后程序默认会直接进入-------------------------------->>>>>>>	轻量级锁状态。</font>
   - -XX:-UseBiasedLocking
 
 
@@ -623,16 +623,6 @@ JDK1.6之前synchronized使用的是重量级锁，<font color='red'>JDK1.6之�
   - 偏向锁至多竞争失败一次，就进行锁撤销判断，锁撤销判断后要么无锁要么轻量级锁
 
 - 如果轻量锁还出现竞争，且自旋达到一定次数后仍然未得到锁，则升级为重量级锁
-
-
-
-
-
-### 锁升级总流程图
-
-<img src="image/JUC06.assets/image-20230719230958460.jpeg" alt="img" style="zoom:150%;" />
-
-
 
 
 
