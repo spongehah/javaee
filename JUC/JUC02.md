@@ -9,7 +9,7 @@
 **本部分包含：**
 
 - 多线程锁各种锁的概览	
-  - <font color='red'>获得所得流程</font>
+  - <font color='red'>获得锁的流程</font>
 
 - <font color='red'>线程中断机制</font>
 - <font color='red'>LockSupport的park替换wait和await方法</font>

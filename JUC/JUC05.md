@@ -1,3 +1,5 @@
+
+
 [TOC]
 
 
@@ -44,6 +46,8 @@ ThreadLocal提供线程局部变量。这些变量<font color='red'>与正常的
 - 不是前面JMM中的本地内存，前面的本地内存是共享主内存中的拷贝，这里的是每个线程独有的一份不一致的变量，不是拷贝来的副本，是本来就是自己的
 
 
+
+> 还有一个**InheritableThreadLocal**，与ThreadLocal的区别在于：**可以将当前线程的本地变量传递给由该线程创建的子线程**
 
 **常用API**
 
@@ -316,7 +320,7 @@ ThreadLocalMap从字面上就可以看出这是一个保存ThreadLocal对象的m
 
 
 
-ThreadLocal是一个壳子，真正的存储结构是ThreadLocal里有ThreadLocalMap.这么个内部类，每个Thread对象维护着一个ThreadLocalMap的引用，ThreadLocalMap是ThreadLocalf的内部类，用Entry来进行存储。
+ThreadLocal是一个壳子，真正的存储结构是ThreadLocal里有ThreadLocalMap.这么个内部类，每个Thread对象维护着一个ThreadLocalMap的引用，ThreadLocalMap是ThreadLocal的内部类，用Entry来进行存储。
 
 - 1)调用ThreadLocalf的set()方法时，实际上就是往ThreadLocalMap设置值，key是ThreadLocal对象，值Value是传递进来的对象
 - 2)调用ThreadLocalf的get()方法时，实际上就是往ThreadLocalMap获取值，key是ThreadLocal对象
@@ -384,6 +388,8 @@ ThreadLocal本身并不存储值(ThreadLocal是一个壳子)，它只是自己�
 
 ## 一些面试题
 
+### 1.0 常见面试题
+
 - ThreadLocal中ThreadLocalMap的数据结构和关系？
   - ThreadLocalMap是ThreadLocal的一个静态内部类，threadLocalMap实际上就是一个以threadLocal实例为key，任意对象为value的Entry对象。不过是经过了两层包装的ThreadLocal对象
     - (1)第一层包装是使用WeakReference<ThreadLocal<?>>将ThreadLocal对象变成一个弱引用的对象
@@ -397,7 +403,104 @@ ThreadLocal本身并不存储值(ThreadLocal是一个壳子)，它只是自己�
 - hreadLocal中最后为什么要加remove方法？
   - 用弱引用，就可以顺利回收掉threadLocal实例对象，但是还需要手动调用remove方法清除key为null的Entry对象，因为Entry对象的v也有一条强引用链指向value对象，否则线程池中容易线程复用value对象，造成内存溢出
 
+### 1.1 线程池和 ThreadLocal 共用的坑
 
+线程池和 `ThreadLocal`共用，可能会导致线程从`ThreadLocal`获取到的是旧值/脏数据。这是因为线程池会复用线程对象，与线程对象绑定的类的静态属性 `ThreadLocal` 变量也会被重用，这就导致一个线程可能获取到其他线程的`ThreadLocal` 值。
+
+不要以为代码中没有显示使用线程池就不存在线程池了，像常用的 Web 服务器 Tomcat 处理任务为了提高并发量，就使用到了线程池，并且使用的是基于原生 Java 线程池改进完善得到的自定义线程池。
+
+当然了，你可以将 Tomcat 设置为单线程处理任务。不过，这并不合适，会严重影响其处理任务的速度。
+
+```properties
+server.tomcat.max-threads=1
+```
+
+解决上述问题比较建议的办法是使用阿里巴巴开源的 `TransmittableThreadLocal`(`TTL`)。`TransmittableThreadLocal`类继承并加强了 JDK 内置的`InheritableThreadLocal`类，在使用线程池等会池化复用线程的执行组件情况下，提供`ThreadLocal`值的传递功能，解决异步执行时上下文传递的问题。
+
+### 1.2 ThreadLocalMap Hash 算法
+
+这里最关键的就是`threadLocalHashCode`值的计算，`ThreadLocal`中有一个属性为`HASH_INCREMENT = 0x61c88647`
+
+每当创建一个`ThreadLocal`对象，这个`ThreadLocal.nextHashCode` 这个值就会增长 `0x61c88647` 。
+
+这个值很特殊，它是**斐波那契数** 也叫 **黄金分割数**。`hash`增量为 这个数字，带来的好处就是 `hash` **分布非常均匀**。
+
+### 1.3 ThreadLocalMap Hash 冲突
+
+虽然`ThreadLocalMap`中使用了**黄金分割数**来作为`hash`计算因子，大大减少了`Hash`冲突的概率，但是仍然会存在冲突。
+
+ThreadLocalMap 使用**线性探测**来解决哈希冲突：看接下来的set方法详解
+
+### 1.4 [ThreadLocalMap.set()详解](https://javaguide.cn/java/concurrent/threadlocal.html#threadlocalmap-set-详解)
+
+> 若发生哈希冲突，则向后进行线性探测，分为三种情况：
+>
+> - 若找到**entry为null**的地方，则进行set
+> - 若找到entry中的**key相等**，则进行替换
+> - 若找到key为null的**已过期entry**，执行`replaceStaleEntry()`方法：
+>   - **先向前**遍历探测过期entry，直到遇到第一个null的位置，设置变量slotToExpunge为遍历过程中最前方的过期entry的下标
+>   - **然后继续线性探测**，直到进行set
+>   - **最后向后**遍历，从先前标记的slotToExpunge处，开始进行过期entry的清理工作（**探测式清理**）
+> - set后进行一次cleanSomeSlots()启发式清理，若清理工作完成后，**未清理到任何数据，且`size`超过了阈值(数组长度的 2/3)**，进行`rehash()`操作
+>   `rehash()`中会先进行一轮探测式清理，清理掉过期的entry后，如果还**size >= 3/4 threshold**，就会执行真正的扩容逻辑(扩容逻辑往后看)
+
+### 1.5 [ThreadLocalMap过期 key 的探测式清理流程](https://javaguide.cn/java/concurrent/threadlocal.html#threadlocalmap过期-key-的探测式清理流程)
+
+上面我们有提及`ThreadLocalMap`的两种过期`key`数据清理方式：**探测式清理**和**启发式清理**。
+
+- **探测式清理**，也就是`expungeStaleEntry()`方法：（expunge：删除；stale：过期的）
+  - 遍历散列数组，从**开始位置(slotToExpunge处，默认为0)**向后探测清理过期数据，将过期数据的`Entry`设置为`null`，沿途中碰到未过期的数据则将此数据`rehash`后重新在`table`数组中定位，如果定位的位置已经有了数据，则会将未过期的数据放到最靠近此位置的`Entry=null`的桶中，使`rehash`后的`Entry`数据距离正确的桶的位置更近一些。
+  - 往后清理时碰到null的槽位，终止探测
+
+### 1.6 ThreadLocalMap过期 key 的启发式清理流程
+
+- **启发式清理**，也就是`cleanSomeSlots()`方法：
+
+  - ```java
+    private boolean cleanSomeSlots(int i, int n) {// i的初始值为0，n为hash数组长度len
+        boolean removed = false;
+        Entry[] tab = table;
+        int len = tab.length;
+        do {
+            i = nextIndex(i, len);// i的值会从0到len，即从0开始遍历数组
+            Entry e = tab[i];
+            if (e != null && e.get() == null) {// 若发现过期entry
+                n = len;	// n重新设置回数组长度len
+                removed = true;
+                i = expungeStaleEntry(i);
+            }
+        } while ( (n >>>= 1) != 0);// 每次循环n除以2，直到n等于0后退出
+        return removed;
+    }
+    ```
+
+    ![image-20240228192938956](image/JUC05.assets/image-20240228192938956.png)
+
+### 1.7 ThreadLocalMap扩容机制
+
+- 触发扩容的条件：
+  - set后进行一次cleanSomeSlots()启发式清理，若清理工作完成后，**未清理到任何数据，且`size`超过了阈值(数组长度的 2/3)**，进行`rehash()`操作
+    `rehash()`中会先进行一轮探测式清理，清理掉过期的entry后，如果还**size >= 3/4 threshold**，就会执行真正的扩容逻辑
+- 扩容为原来的**两倍**，扩容后所有entry重新进行rehash放到新的位置
+
+### 1.8 ThreadLocalMap.get()详解
+
+> get时若发生哈希冲突，则向后进行线性探测：
+>
+> - 找到key，直接返回
+> - 若先找到key为null的过期entry，则先进行一次探测式清理，后序的entry就会被rehash到离正确的桶的位置更近一些，然后遍历到key位置进行返回
+
+### 1.9 InheritableThreadLocal
+
+我们使用`ThreadLocal`的时候，在异步场景下是无法给子线程共享父线程中创建的线程副本数据的。
+
+为了解决这个问题，JDK 中还有一个`InheritableThreadLocal`类
+
+实现原理是子线程是通过在父线程中通过调用`new Thread()`方法来创建子线程，`Thread#init`方法在`Thread`的构造方法中被调用。在`init`方法中拷贝父线程数据到子线程
+
+但`InheritableThreadLocal`仍然有缺陷，一般我们做异步化处理都是使用的线程池，而`InheritableThreadLocal`是在`new Thread`中的`init()`方法给赋值的，而线程池是线程复用的逻辑，所以这里会存在问题。
+
+当然，有问题出现就会有解决问题的方案，阿里巴巴开源了一个`TransmittableThreadLocal`（TTL）组件就可以解决这个问题
 
 
 

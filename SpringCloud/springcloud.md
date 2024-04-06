@@ -3125,6 +3125,12 @@ curl -X PUT '$NACOS_SERVER:8848/nacos/v1/ns/operator/switches?entry=serverMode&v
     <groupId>com.alibaba.cloud</groupId>
     <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
 </dependency>
+<!--在SpringBoot 2.4.x的版本之后，对于bootstrap.properties/bootstrap.yaml配置文件(我们合起来成为Bootstrap配置文件)的支持，需要导入该jar包-->
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-bootstrap</artifactId>
+    <version>3.0.2</version>
+</dependency>
 ```
 
 3、写yaml：
@@ -3157,6 +3163,35 @@ spring:
 
 # ${spring.application.name}-${spring.profile.active}.${spring.cloud.nacos.config.file-extension}
 ```
+
+> 还可以这样配置bootstrap.yml：
+>
+> ```yaml
+> spring:
+>   application:
+>     name: qiyu-live-user-provider
+>   cloud:
+>     nacos:
+>       username: qiyu
+>       password: qiyu
+>       discovery:
+> 
+>         server-addr: nacos.server:8848
+>         namespace: qiyu-live-test
+>       config:
+>         import-check:
+>           enabled: false
+>         # 当前服务启动后去nacos中读取配置文件的后缀
+>         file-extension: yml
+>         # 读取配置的nacos地址
+>         server-addr: nacos.server:8848
+>         # 读取配置的nacos的名空间
+>         namespace: b8098488-3fd3-4283-a68c-2878fdf425ab
+>         group: DEFAULT_GROUP
+>   config:
+>     import:
+>       - optional:nacos:${spring.application.name}.yml	# 直接导入nacos中指定的文件为配置文件
+> ```
 
 application.yaml:
 

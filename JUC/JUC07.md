@@ -1,3 +1,11 @@
+---
+title: JUC07-AQS（AbstractQueuedSynchronizer）及源码解读
+date: 2023-10-01 14:37:00
+tag: JUC
+category: 学习笔记
+
+---
+
 [TOC]
 
 
@@ -612,7 +620,7 @@ public final boolean release(int arg) {
   >                    return interrupted;
   >                }
   >                if (shouldParkAfterFailedAcquire(p, node) &&
-  >                    parkAndCheckInterrupt())	//该方法是调用pork()方法阻塞线程
+  >                    parkAndCheckInterrupt())	//该方法是调用park()方法阻塞线程
   >                    interrupted = true;
   >            }
   >        } finally {

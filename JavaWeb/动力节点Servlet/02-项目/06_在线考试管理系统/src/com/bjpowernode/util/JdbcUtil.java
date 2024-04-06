@@ -9,14 +9,14 @@ public class JdbcUtil {
 
      final String URL="jdbc:mysql://localhost:3306/bjpowernode";
      final String USERNAME="root";
-     final String PASSWORD="123";
+     final String PASSWORD="123456";
      PreparedStatement ps= null;
      Connection con = null;
 
     //将jar包中driver实现类加载到JVM中
     static{
         try {
-            Class.forName("com.mysql.jdbc.Driver");
+            Class.forName("com.mysql.cj.jdbc.Driver");
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
