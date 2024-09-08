@@ -548,10 +548,9 @@ Java中synchronized的重量级锁，是<font color='red'>基于进入和退出M
 
 
 - <font color='cornflowerblue'>在无锁状态下</font>，Mark Word中可以存储对象的identity hash code值。当对象的hashCode()方法第一次被调用时，JVM会生成对应的identity hash code值并将该值存储到Mark Word中。
-- <font color='cornflowerblue'>对于偏向锁</font>，在线程获取偏向锁时，会用Thread ID和epoch值覆盖identity hash code所在的位置。<font color='red'>如果一个对象的hashCode()方法己经被调用过一次之后，这个对象不能被设置偏向锁，将直接升级为轻量级锁</font>。因为如果可以的话，那Mark Word中的identity hash code必然会被偏向线程ld给覆盖，这就会造成同一个对象前后两次调用hashCode()方法得到的结果不一致。<font color='red'>已经是偏向锁后计算哈希值，那么会直接升级为重量级锁</font>，因为hash的标志位已经被覆盖，轻量级锁是复制原MarkWord，但是此时原MarkWord已经没有hash标志位了
+- <font color='cornflowerblue'>对于偏向锁</font>，在线程获取偏向锁时，会用Thread ID和epoch值覆盖identity hash code所在的位置。<font color='red'>如果一个对象的hashCode()方法己经被调用过一次之后，这个对象不能被设置偏向锁，将直接升级为轻量级锁</font>。因为如果可以的话，那Mark Word中的identity hash code必然会被偏向线程id给覆盖，这就会造成同一个对象前后两次调用hashCode()方法得到的结果不一致。<font color='red'>已经是偏向锁后计算哈希值，那么会直接升级为重量级锁</font>，因为hash的标志位已经被覆盖，轻量级锁是复制原MarkWord，但是此时原MarkWord已经没有hash标志位了
 
 - <font color='cornflowerblue'>升级为轻量级锁时</font>，JVM会<font color='red'>在当前线程的**栈帧**中创建一个锁记录(Lock Record)空间，用于存储锁对象的Mark Word拷贝</font>，该拷贝中可以包含identity hash code，所以<font color='red'>轻量级锁可以和identity hash code共存</font>，哈希码和GC年龄自然保存在此，**释放锁后会将这些信息写回到对象头。**
-
 - <font color='cornflowerblue'>升级为重量级锁后</font>，Mark Word保存的重量级锁指针，代表<font color='red'>重量级锁的ObjectMonitor类里有字段记录非加锁状态下的Mark Word</font>，**锁释放后也会将信息写回到对象头**
 
 

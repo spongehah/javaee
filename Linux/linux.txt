@@ -177,7 +177,8 @@ Linux终端基础指令：
 		date -d "1 days ago"		获取一天后的时间
 		date -d "-1 hours ago" 		获取一个小时前的时间
 		date -s "2027-06-19 20:52:06"	将系统时间设置为这么多
-		ntpdate				重新联网同步时间
+		timedatectl set-time  '2024-05-02 22:45:15'		设置时间为某个时间
+		ntpdate cn.pool.ntp.org				重新联网同步时间
 		cal 				查看当月日历
 		cal -y				查看当年日历
 
